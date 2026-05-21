@@ -629,6 +629,9 @@ function _projectToday(exchange, live) {
 }
 
 // ── Row rendering ─────────────────────────────────────────────────────────
+// Two-line cell shape (compact):
+//   line 1: VALUE  (with optional ● LIVE dot)
+//   line 2: meta — date OR "Wed 21 May · est 78%" OR "trailing 45d" OR "projected"
 function _renderRow(exchange, live, trail, ma45) {
   const proj = _projectToday(exchange, live);
   const todayValue = proj.value;
@@ -641,7 +644,7 @@ function _renderRow(exchange, live, trail, ma45) {
     return (
       '<td class="kpi-num kpi-cell">' +
         `<span class="kpi-value">${_fmtCr(r.total_rev)}</span>` +
-        `<span class="kpi-date">${_weekdayDate(r.date)}</span>` +
+        `<span class="kpi-meta">${_weekdayDate(r.date)}</span>` +
       '</td>'
     );
   }
@@ -650,21 +653,20 @@ function _renderRow(exchange, live, trail, ma45) {
   if (todayValue == null) {
     todayCell = '<td class="kpi-num kpi-cell kpi-today">—</td>';
   } else {
-    const dot = isLive ? '<span class="kpi-live-dot" title="LIVE"></span>' : '';
-    const projTag = proj.projected
-      ? `<span class="kpi-proj">est · ${proj.elapsedPct != null ? proj.elapsedPct.toFixed(0) + '% elapsed' : 'session live'}</span>`
+    const dot  = isLive ? '<span class="kpi-live-dot" title="LIVE"></span>' : '';
+    const tail = proj.projected
+      ? ` · est ${proj.elapsedPct != null ? proj.elapsedPct.toFixed(0) + '%' : 'live'}`
       : '';
     todayCell = (
       '<td class="kpi-num kpi-cell kpi-today">' +
         `<span class="kpi-value kpi-value--strong">${_fmtCr(todayValue)}${dot}</span>` +
-        `<span class="kpi-date">${_weekdayDate(todayDate)}</span>` +
-        projTag +
+        `<span class="kpi-meta">${_weekdayDate(todayDate)}${tail}</span>` +
       '</td>'
     );
   }
 
   const ma45Cell = ma45 != null
-    ? `<td class="kpi-num kpi-cell"><span class="kpi-value">${_fmtCr(ma45)}</span><span class="kpi-date">trailing 45d</span></td>`
+    ? `<td class="kpi-num kpi-cell"><span class="kpi-value">${_fmtCr(ma45)}</span><span class="kpi-meta">trailing 45d</span></td>`
     : `<td class="kpi-num kpi-cell">—</td>`;
 
   let deltaCell = '<td class="kpi-num kpi-cell">—</td>';
@@ -675,7 +677,7 @@ function _renderRow(exchange, live, trail, ma45) {
     deltaCell = (
       `<td class="kpi-num kpi-cell kpi-delta ${cls}">` +
         `<span class="kpi-value kpi-value--strong"><span class="kpi-glyph">${glyph}</span>${_fmtPct(pct)}</span>` +
-        `<span class="kpi-date">${proj.projected ? 'projected' : 'final'}</span>` +
+        `<span class="kpi-meta">${proj.projected ? 'projected' : 'final'}</span>` +
       '</td>'
     );
   }
@@ -741,13 +743,15 @@ async function updateKPIStrip() {
         _renderRow('bse', live.bse, bseHist.trail, bseHist.ma45) +
         _renderRow('mcx', live.mcx, mcxHist.trail, mcxHist.ma45) +
       '</tbody>' +
-      '<tfoot>' +
-        '<tr><td colspan="7" class="kpi-footnote">' +
-          'Values in ₹ Cr · ' + (hasLive ? '<span class="kpi-live-dot"></span> LIVE · ' : 'EOD · ') +
-          'Today projected to full-day · Updated ' + updatedAt + ' IST' +
-        '</td></tr>' +
-      '</tfoot>' +
     '</table>';
+
+  // Footnote moved into the breadcrumb's right slot to reclaim ~26px vertical
+  const liveStatusEl = document.getElementById('liveStatus');
+  if (liveStatusEl) {
+    liveStatusEl.innerHTML = (hasLive
+      ? '<span class="kpi-live-dot"></span> LIVE'
+      : 'EOD') + ' · ₹ Cr · ' + updatedAt + ' IST';
+  }
 
   el.dataset.rendered = '1';
 }

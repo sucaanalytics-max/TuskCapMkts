@@ -392,6 +392,18 @@ html, body {
   color: var(--color-text-muted);
 }
 
+.crumb-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.crumb-live .kpi-live-dot {
+  margin-left: 0;
+}
+
 .mobile-nav-toggle {
   background: transparent;
   border: 0;
@@ -485,7 +497,7 @@ html, body {
   grid-row: 2;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   background: var(--color-bg);
 }
 
@@ -566,7 +578,7 @@ html, body {
 }
 
 .kpi-strip {
-  margin: 0 0 var(--space-4) 0;
+  margin: 0 0 var(--space-3) 0;
   padding: 0;
 }
 
@@ -596,7 +608,7 @@ html, body {
 
 .kpi-table th,
 .kpi-table td {
-  padding: 6px 10px;
+  padding: 4px 10px;
   border-right: 1px solid var(--kpi-border);
   border-bottom: 1px solid var(--kpi-border);
   vertical-align: top;
@@ -659,49 +671,40 @@ html, body {
   border-right: 2px solid var(--kpi-border-heavy);
 }
 
-/* Two-line cell content (value on top, date below). Scoped to kpi-table so it
-   does not collide with the older kpi-card .kpi-value at line ~748. */
+/* Two-line cell content (value on top, meta below). Scoped to kpi-table so
+ * it does not collide with the older kpi-card .kpi-value. Compact 2-line
+ * shape so each row only takes ~40px instead of ~80px. */
 .kpi-table .kpi-value {
   display: block;
   font-family: var(--kpi-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.1;
   color: var(--color-text, #1a1a1a);
   white-space: nowrap;
 }
 
 .kpi-table .kpi-value--strong {
   font-weight: 700;
-  font-size: 17px;
+  font-size: 16px;
 }
 
-.kpi-table .kpi-date {
-  display: block;
-  margin-top: 3px;
-  font-family: var(--kpi-mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  color: #8a857d;        /* slightly darker than text-muted for visibility */
-  text-align: right;
-  white-space: nowrap;
-}
-
-[data-theme="dark"] .kpi-table .kpi-date { color: #999; }
-
-.kpi-table .kpi-proj {
+.kpi-table .kpi-meta {
   display: block;
   margin-top: 1px;
   font-family: var(--kpi-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
-  font-style: italic;
   letter-spacing: 0.02em;
-  color: var(--color-text-faint, #aaa);
+  color: #8a857d;
   text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+[data-theme="dark"] .kpi-table .kpi-meta { color: #999; }
 
 /* Δ vs MA45 column */
 .kpi-table .kpi-delta { font-weight: 700; }
@@ -745,23 +748,22 @@ html, body {
 }
 
 @media (max-width: 1180px) {
-  .kpi-table .kpi-value         { font-size: 15px; }
-  .kpi-table .kpi-value--strong { font-size: 16px; }
-  .kpi-table th, .kpi-table td  { padding: 5px 8px; }
+  .kpi-table .kpi-value         { font-size: 14px; }
+  .kpi-table .kpi-value--strong { font-size: 15px; }
+  .kpi-table th, .kpi-table td  { padding: 3px 8px; }
 }
 
 @media (max-width: 920px) {
-  .kpi-table .kpi-value         { font-size: 13.5px; }
-  .kpi-table .kpi-value--strong { font-size: 14.5px; }
-  .kpi-table .kpi-date          { font-size: 9.5px; }
-  .kpi-table .kpi-proj          { display: none; }
-  .kpi-table th, .kpi-table td  { padding: 4px 6px; }
+  .kpi-table .kpi-value         { font-size: 13px; }
+  .kpi-table .kpi-value--strong { font-size: 14px; }
+  .kpi-table .kpi-meta          { font-size: 9.5px; }
+  .kpi-table th, .kpi-table td  { padding: 3px 6px; }
 }
 
 @media (max-width: 720px) {
   .kpi-table thead th           { font-size: 9px; letter-spacing: 0.04em; }
-  .kpi-table .kpi-value         { font-size: 12.5px; }
-  .kpi-table .kpi-date          { font-size: 9px; }
+  .kpi-table .kpi-value         { font-size: 12px; }
+  .kpi-table .kpi-meta          { font-size: 9px; }
 }
 
 /* =========================
@@ -1015,7 +1017,7 @@ span.neutral {
 .sub-tabs {
   display: flex;
   gap: 0;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-2);
   background: transparent;
   padding: 0;
   border-bottom: 2px solid var(--color-primary);
@@ -1025,7 +1027,7 @@ span.neutral {
 .sub-tab {
   font-size: 11px;
   font-weight: 600;
-  padding: 5px 14px;
+  padding: 3px 12px;
   border-radius: 0;
   color: var(--color-text-muted);
   cursor: pointer;
@@ -1436,7 +1438,7 @@ span.neutral {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 6px 12px;
+  padding: 4px 12px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1532,7 +1534,7 @@ span.neutral {
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 4px 8px 3px;
+  padding: 3px 8px 2px;
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
 }
@@ -1547,7 +1549,7 @@ span.neutral {
   color: var(--color-text-faint);
   font-size: 10.5px;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
@@ -1559,7 +1561,7 @@ span.neutral {
 .xl-period-table td,
 .xl-dow-table td,
 .xl-week-table td {
-  padding: 4px 8px;
+  padding: 3px 8px;
   white-space: nowrap;
   vertical-align: middle;
   color: var(--color-text);
