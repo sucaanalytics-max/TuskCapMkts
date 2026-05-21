@@ -504,19 +504,22 @@ html, body {
 
 .data-table,
 .xl-dow-table,
-.xl-period-table {
+.xl-period-table,
+.xl-week-table {
   font-variant-numeric: tabular-nums;
 }
 
 .data-table tbody tr:nth-child(even),
 .xl-dow-table tbody tr:nth-child(even),
-.xl-period-table tbody tr:nth-child(even) {
+.xl-period-table tbody tr:nth-child(even),
+.xl-week-table tbody tr:nth-child(even) {
   background: var(--kpi-band, #faf8f4);
 }
 
 .data-table tbody tr:hover,
 .xl-dow-table tbody tr:hover,
-.xl-period-table tbody tr:hover {
+.xl-period-table tbody tr:hover,
+.xl-week-table tbody tr:hover {
   background: color-mix(in srgb, var(--color-primary, #0958d9) 7%, transparent);
 }
 
@@ -524,7 +527,8 @@ html, body {
  * .text-col cells can opt out. */
 .data-table td:not(.label-col):not(.text-col),
 .xl-dow-table td:not(.label-col):not(.text-col),
-.xl-period-table td:not(.label-col):not(.text-col) {
+.xl-period-table td:not(.label-col):not(.text-col),
+.xl-week-table td:not(.label-col):not(.text-col) {
   text-align: right;
 }
 
@@ -1446,36 +1450,78 @@ span.neutral {
   font-size: 10px;
 }
 
-/* ── Two-panel row: period table LEFT | DoW table RIGHT ── */
+/* ── Two-panel row: period table LEFT | (DoW + Week) RIGHT ──
+ * The right side is a flex column so DoW sits on top and the Week summary
+ * drops below it. Pulling Week out of the period table gives DoW the full
+ * width of the right column and prevents horizontal overflow.
+ */
 .xl-main-row {
-  display: flex;
-  align-items: flex-start;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: 36% 64%;
+  align-items: stretch;
+  overflow: hidden;
 }
 
-/* LEFT: period sections — fixed 37% of content width */
+/* LEFT: period sections (FY / Quarter / Month) */
 .xl-period-table {
   border-collapse: collapse;
   font-size: 12px;
   table-layout: fixed;
-  width: 37%;           /* % of flex container; fixed via flex-basis */
-  flex: 0 0 37%;
+  width: 100%;
   border-right: 2px solid var(--color-border);
 }
 
-/* Colgroup widths as % of the period table */
+/* Colgroup widths within the period table */
 .xl-col-period { width: 44%; }
-.xl-col-val    { width: 20%; }
-.xl-col-chg1   { width: 18%; }
-.xl-col-chg2   { width: 18%; }
+.xl-col-val    { width: 22%; }
+.xl-col-chg1   { width: 17%; }
+.xl-col-chg2   { width: 17%; }
 
-/* RIGHT: DoW — fills remaining 63%, auto column widths from content */
+/* RIGHT column wrapper: stacks DoW on top, Week underneath */
+.xl-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* DoW table — fixed layout with explicit colgroup so columns can't grow
+ * past the right column's width and force horizontal scroll. */
 .xl-dow-table {
   border-collapse: collapse;
   font-size: 12px;
-  table-layout: auto;   /* columns size to content, then expand to fill */
-  flex: 1 1 0;
-  min-width: 0;
+  table-layout: fixed;
+  width: 100%;
+}
+.xl-dow-day { width: 19%; }     /* fits "Wednesday" comfortably */
+
+/* Week table — sits below DoW. Same column proportions as the period
+ * table's old Week section so it reads consistently. */
+.xl-week-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+  width: 100%;
+  border-top: 1px solid var(--color-border);
+  margin-top: 0;
+}
+.xl-wk-label { width: 30%; }
+.xl-wk-val   { width: 24%; }
+.xl-wk-chg   { width: 23%; }
+
+/* Tighter horizontal padding inside DoW to fit 7 columns in 64% width */
+.xl-dow-table th,
+.xl-dow-table td { padding-left: 6px; padding-right: 6px; }
+
+/* Narrow viewport: stack period (top) and DoW+Week (bottom). DoW table
+ * gets full main width, easily fits 7 columns. */
+@media (max-width: 1100px) {
+  .xl-main-row {
+    grid-template-columns: 1fr;
+  }
+  .xl-period-table {
+    border-right: 0;
+    border-bottom: 2px solid var(--color-border);
+  }
 }
 
 /* Section header rows (e.g. "Financial Year", "Quarter") */
@@ -1511,7 +1557,8 @@ span.neutral {
 
 /* Data rows */
 .xl-period-table td,
-.xl-dow-table td {
+.xl-dow-table td,
+.xl-week-table td {
   padding: 4px 8px;
   white-space: nowrap;
   vertical-align: middle;
@@ -1523,20 +1570,23 @@ span.neutral {
 
 /* Last row in each data tbody: no bottom border */
 .xl-sec-data tr:last-child td,
-.xl-dow-table tbody tr:last-child td {
+.xl-dow-table tbody tr:last-child td,
+.xl-week-table tbody tr:last-child td {
   border-bottom: none;
 }
 
 /* Period label column */
 .xl-period-table td:first-child,
-.xl-dow-table td:first-child {
+.xl-dow-table td:first-child,
+.xl-week-table td:first-child {
   color: var(--color-text-secondary);
   font-size: 12px;
 }
 
 /* Value / change columns — right-aligned */
 .xl-period-table td:nth-child(n+2),
-.xl-dow-table td:nth-child(n+2) {
+.xl-dow-table td:nth-child(n+2),
+.xl-week-table td:nth-child(n+2) {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -1561,9 +1611,11 @@ tr.xl-r-cur { background: rgba(37, 99, 235, 0.03); }
 
 /* Cell-level background for direct % change cells */
 .xl-period-table td:has(> .xl-chg.xl-pos),
-.xl-dow-table   td:has(> .xl-chg.xl-pos) { background: var(--color-positive-bg); }
+.xl-dow-table   td:has(> .xl-chg.xl-pos),
+.xl-week-table  td:has(> .xl-chg.xl-pos) { background: var(--color-positive-bg); }
 .xl-period-table td:has(> .xl-chg.xl-neg),
-.xl-dow-table   td:has(> .xl-chg.xl-neg) { background: var(--color-negative-bg); }
+.xl-dow-table   td:has(> .xl-chg.xl-neg),
+.xl-week-table  td:has(> .xl-chg.xl-neg) { background: var(--color-negative-bg); }
 
 /* Hover */
 .xl-period-table tbody tr:hover td,

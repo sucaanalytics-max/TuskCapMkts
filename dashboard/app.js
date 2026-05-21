@@ -1093,21 +1093,35 @@ function xlSegmentBlock(segData, label, segKey, fyOpts, qOpts, mOpts) {
             <tr class="xl-col-hdr"><td>Month</td><td>Value</td><td>% chg</td><td></td></tr>
             ${mRows}
           </tbody>
-
-          <tbody class="xl-sec">
-            <tr class="xl-sec-hdr"><td colspan="4">Week</td></tr>
-            <tr class="xl-col-hdr"><td>Period</td><td>Value</td><td>WoW</td><td>Wo10W</td></tr>
-            ${wRows}
-          </tbody>
         </table>
 
-        <table class="xl-dow-table">
-          <thead>
-            <tr class="xl-sec-hdr"><td colspan="7">Day of Week</td></tr>
-            <tr class="xl-col-hdr"><td>Day</td><td>Latest</td><td>3D Avg</td><td>Do3D</td><td>10D Avg</td><td>Do10D</td><td>Prev Wk</td></tr>
-          </thead>
-          <tbody>${dowRows}</tbody>
-        </table>
+        <div class="xl-right">
+          <table class="xl-dow-table">
+            <colgroup>
+              <col class="xl-dow-day">
+              <col><col><col><col><col><col>
+            </colgroup>
+            <thead>
+              <tr class="xl-sec-hdr"><td colspan="7">Day of Week</td></tr>
+              <tr class="xl-col-hdr"><td>Day</td><td>Latest</td><td>3D Avg</td><td>Do3D</td><td>10D Avg</td><td>Do10D</td><td>Prev Wk</td></tr>
+            </thead>
+            <tbody>${dowRows}</tbody>
+          </table>
+
+          <table class="xl-week-table">
+            <colgroup>
+              <col class="xl-wk-label">
+              <col class="xl-wk-val">
+              <col class="xl-wk-chg">
+              <col class="xl-wk-chg">
+            </colgroup>
+            <thead>
+              <tr class="xl-sec-hdr"><td colspan="4">Week</td></tr>
+              <tr class="xl-col-hdr"><td>Period</td><td>Value</td><td>WoW</td><td>Wo10W</td></tr>
+            </thead>
+            <tbody>${wRows}</tbody>
+          </table>
+        </div>
 
       </div>
     </div>`;
