@@ -240,6 +240,9 @@ const EXCHANGE_TABS = {
     { id: 'prediction',  label: 'Revenue Predictor', icon: 'prediction' },
     { id: 'share',       label: 'Regression',       icon: 'share' },
   ],
+  total: [
+    { id: 'total', label: 'Combined Revenue', icon: 'revenue' },
+  ],
 };
 
 const TAB_TITLES = {
@@ -258,6 +261,9 @@ const TAB_TITLES = {
     commodities: 'MCX Commodity Analytics',
     prediction:  'Revenue Predictor',
     share:       'Share Price Analytics',
+  },
+  total: {
+    total: 'Combined Revenue · NSE + BSE + MCX',
   },
 };
 
@@ -409,6 +415,18 @@ function toggleExchangeContent(exchange) {
   // MCX-only sections
   show('mcxPredictionContent', isMCX);
   show('mcx-share-inner',      isMCX);
+
+  // TOTAL (combined) tab section
+  const totalTab = document.getElementById('tab-total');
+  if (totalTab) {
+    if (exchange === 'total') {
+      // Activate Total tab, hide the others
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      totalTab.classList.add('active');
+    } else {
+      totalTab.classList.remove('active');
+    }
+  }
 }
 
 // ========================
@@ -416,6 +434,20 @@ function toggleExchangeContent(exchange) {
 // ========================
 
 async function loadExchangeData(exchange) {
+  // TOTAL view: load all three exchanges' dashboard JSONs in parallel so the
+  // combined renderer can aggregate client-side.
+  if (exchange === 'total') {
+    const [nseD, bseD, mcxD] = await Promise.all([
+      fetch('./data/nse_dashboard_data.json').then(r => r.json()).catch(() => null),
+      fetch('./data/bse_dashboard_data.json').then(r => r.json()).catch(() => null),
+      fetch('./data/mcx_dashboard_data.json').then(r => r.json()).catch(() => null),
+    ]);
+    DATA = { _all: { nse: nseD, bse: bseD, mcx: mcxD } };
+    ENRICHED_DATA = null;
+    SHARE_DATA = null;
+    return;
+  }
+
   const fetches = [
     fetch(`./data/${exchange}_dashboard_data.json`),
     fetch(`./data/${exchange}_enriched_data.json`),
@@ -765,7 +797,13 @@ const updateLatestRevBanner = updateKPIStrip;
 
 function rebuildAll() {
   applyChartDefaults();
-  // Shared
+
+  if (currentExchange === 'total') {
+    buildTotalCombinedView();
+    return;
+  }
+
+  // Shared per-exchange Revenue Summary
   buildRevenueSummary();
 
   if (currentExchange === 'nse') {
@@ -781,6 +819,163 @@ function rebuildAll() {
     buildMCXRevenuePredictor();
     buildMCXShareAnalysis();
   }
+}
+
+// ========================
+// TOTAL (combined NSE+BSE+MCX) view
+// ========================
+//
+// Aggregates the three exchanges' dashboard JSONs into one dense Excel-style
+// grid. Rows are period buckets (FY / Quarter / Month / Week); columns are
+// NSE | BSE | MCX | Combined | Δ vs row below. All aggregation client-side
+// from the JSONs loaded by loadExchangeData('total').
+
+function _totalSumPeriod(periodKey, periodVal, all, kind) {
+  // Returns { nse, bse, mcx, combined } where each is the per-exchange
+  // daily-avg revenue for the given period bucket. periodKey/periodVal
+  // describes how to find rows in each dashboard:
+  //   kind='quarter' : periodVal is the quarter string e.g. 'Q1 FY 2027'
+  //   kind='month'   : periodVal is the month string e.g. 'FY 2027 May'
+  //   kind='fy'      : periodVal is the FY string e.g. 'FY 2027'
+  const out = { nse: null, bse: null, mcx: null, combined: null };
+
+  for (const ex of ['nse', 'bse', 'mcx']) {
+    const d = all && all[ex];
+    if (!d) continue;
+    let v = null;
+    if (kind === 'quarter') {
+      const row = (d.quarterly || []).find(q => q.quarter === periodVal);
+      if (row && row.days) v = row.total_rev / row.days;
+    } else if (kind === 'month') {
+      const row = (d.monthly || []).find(m => (m.month || m.label) === periodVal);
+      if (row && row.days) v = row.total_rev / row.days;
+    } else if (kind === 'fy') {
+      const qs = (d.quarterly || []).filter(q => q.quarter.endsWith(periodVal));
+      if (qs.length) {
+        const rev  = qs.reduce((s, q) => s + (q.total_rev || 0), 0);
+        const days = qs.reduce((s, q) => s + (q.days || q.trading_days || 0), 0);
+        v = days > 0 ? rev / days : null;
+      }
+    }
+    out[ex] = v;
+  }
+  const present = ['nse','bse','mcx'].map(k => out[k]).filter(v => v != null);
+  out.combined = present.length ? present.reduce((s,v)=>s+v, 0) : null;
+  return out;
+}
+
+function _tFmt(v) {
+  if (v == null || isNaN(v)) return '<span class="t-num-empty">—</span>';
+  return `<span class="t-num">${Number(v).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>`;
+}
+
+function _tDelta(curr, prev) {
+  if (curr == null || prev == null || prev === 0) return '<span class="t-chg t-neu">—</span>';
+  const pct = (curr / prev - 1) * 100;
+  const cls = pct >= 0.05 ? 't-pos' : pct <= -0.05 ? 't-neg' : 't-neu';
+  const sign = pct >= 0 ? '+' : '−';
+  return `<span class="t-chg ${cls}">${sign}${Math.abs(pct).toFixed(1)} %</span>`;
+}
+
+function _tRow(label, vals, deltaVs, opts = {}) {
+  const cls = opts.current ? 't-row-current' : '';
+  const indent = opts.indent ? ' style="padding-left:18px;color:var(--color-text-secondary)"' : '';
+  let chg = '<span class="t-chg t-neu"></span>';
+  if (deltaVs) chg = _tDelta(vals.combined, deltaVs.combined);
+  return `<tr class="${cls}">
+    <td class="t-label"${indent}>${label}</td>
+    <td>${_tFmt(vals.nse)}</td>
+    <td>${_tFmt(vals.bse)}</td>
+    <td>${_tFmt(vals.mcx)}</td>
+    <td class="t-combined">${_tFmt(vals.combined)}</td>
+    <td class="t-chg-cell">${chg}</td>
+  </tr>`;
+}
+
+function _tSection(label) {
+  return `<tr class="t-sec"><td colspan="6">${label}</td></tr>`;
+}
+
+function buildTotalCombinedView() {
+  const container = document.getElementById('totalContent');
+  if (!container) return;
+  const all = (DATA && DATA._all) || {};
+  if (!all.nse || !all.bse || !all.mcx) {
+    container.innerHTML = '<div class="t-loading">Loading combined data…</div>';
+    return;
+  }
+
+  // ── Discover top FY / Quarter / Month options from NSE (most complete history)
+  const qList = (all.nse.quarterly || []).slice().sort((a, b) => (a.quarter < b.quarter ? 1 : -1));   // newest first
+  const mList = (all.nse.monthly   || []).slice().sort((a, b) => ((a.month||a.label) < (b.month||b.label) ? 1 : -1));
+
+  // FY list, derived from quarter names
+  const fySet = [];
+  qList.forEach(q => {
+    const m = q.quarter.match(/FY \d{4}/);
+    if (m && !fySet.includes(m[0])) fySet.push(m[0]);
+  });
+
+  // ── Build aggregated rows
+  const fyRows = [];
+  if (fySet[0]) fyRows.push({ label: fySet[0], vals: _totalSumPeriod('fy', fySet[0], all, 'fy'), current: true });
+  if (fySet[1]) fyRows.push({ label: fySet[1], vals: _totalSumPeriod('fy', fySet[1], all, 'fy') });
+  if (fySet[2]) fyRows.push({ label: fySet[2], vals: _totalSumPeriod('fy', fySet[2], all, 'fy') });
+
+  const qPicks = [qList[0], qList[1], qList[2], qList[3]].filter(Boolean);
+  const qRows = qPicks.map((q, i) => ({
+    label: q.quarter,
+    vals: _totalSumPeriod('quarter', q.quarter, all, 'quarter'),
+    current: i === 0,
+  }));
+
+  const mPicks = [mList[0], mList[1], mList[2]].filter(Boolean);
+  const mRows = mPicks.map((m, i) => ({
+    label: m.month || m.label,
+    vals: _totalSumPeriod('month', m.month || m.label, all, 'month'),
+    current: i === 0,
+  }));
+
+  // ── Render
+  let html = '';
+  html += '<div class="t-card">';
+  html += '<div class="t-card-header">Cross-Exchange Revenue · ₹ Cr · daily avg</div>';
+  html += '<table class="t-table"><colgroup>' +
+    '<col class="t-c-label"><col class="t-c-x"><col class="t-c-x"><col class="t-c-x"><col class="t-c-tot"><col class="t-c-chg">' +
+    '</colgroup>';
+  html += '<thead><tr class="t-col-hdr">' +
+    '<td>Period</td><td>NSE</td><td>BSE</td><td>MCX</td><td>Combined</td><td>vs Prev</td>' +
+    '</tr></thead>';
+  html += '<tbody>';
+
+  // Financial Year section
+  html += _tSection('Financial Year');
+  for (let i = 0; i < fyRows.length; i++) {
+    const r = fyRows[i];
+    const prev = fyRows[i + 1];
+    html += _tRow(r.label, r.vals, prev ? prev.vals : null, { current: r.current });
+  }
+
+  // Quarter section
+  html += _tSection('Quarter');
+  for (let i = 0; i < qRows.length; i++) {
+    const r = qRows[i];
+    const prev = qRows[i + 1];
+    html += _tRow(r.label, r.vals, prev ? prev.vals : null, { current: r.current });
+  }
+
+  // Month section
+  html += _tSection('Month');
+  for (let i = 0; i < mRows.length; i++) {
+    const r = mRows[i];
+    const prev = mRows[i + 1];
+    html += _tRow(r.label, r.vals, prev ? prev.vals : null, { current: r.current });
+  }
+
+  html += '</tbody></table>';
+  html += '</div>';
+
+  container.innerHTML = html;
 }
 
 // ========================

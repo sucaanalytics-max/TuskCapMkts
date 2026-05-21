@@ -44,6 +44,7 @@
       <button class="exchange-btn active" data-exchange="nse">NSE</button>
       <button class="exchange-btn" data-exchange="bse">BSE</button>
       <button class="exchange-btn" data-exchange="mcx">MCX</button>
+      <button class="exchange-btn" data-exchange="total" title="NSE + BSE + MCX combined">ALL</button>
     </div>
 
     <nav class="sidebar-nav" id="sidebarNav">
@@ -304,6 +305,15 @@
           <div style="font-size:14px;font-weight:600;margin-bottom:8px">Loading share analysis…</div>
         </div>
       </div>
+    </section>
+
+    <!-- ===================== TOTAL: NSE+BSE+MCX combined ===================== -->
+    <!-- Cross-exchange dense grid. Same Excel-style pattern as the per-exchange
+         Revenue Summary, but columns are NSE / BSE / MCX / Combined instead of
+         segment sub-tabs. Inspired by the reverted "terminal-style cross-segment
+         grid" commit from preview/design-guidelines (Research-Tusk repo). -->
+    <section class="tab-content" id="tab-total">
+      <div id="totalContent"></div>
     </section>
 
     <!-- ===================== MCX TAB: DAILY PREDICTOR ===================== -->

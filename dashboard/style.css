@@ -2738,3 +2738,144 @@ html.dark, [data-theme="dark"] {
 /* 2-col grid utility (mirrors source `.g2` at line 391 of MCX index.html) */
 .mcx-wrap .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 800px) { .mcx-wrap .g2 { grid-template-columns: 1fr; } }
+
+/* ═════════════════════════════════════════════════════════════════════════
+ * TOTAL TAB — cross-exchange grid (NSE | BSE | MCX | Combined)
+ *
+ * Inspired by the reverted "terminal-style cross-segment grid" commit on
+ * preview/design-guidelines (Research-Tusk repo) — same dense Excel-style
+ * pattern, but the axis is exchange instead of segment.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+.t-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.t-card-header {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+}
+
+.t-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: var(--kpi-mono);
+  font-size: 12px;
+}
+
+.t-c-label { width: 26%; }
+.t-c-x     { width: 14%; }    /* NSE / BSE / MCX cols */
+.t-c-tot   { width: 16%; }
+.t-c-chg   { width: 16%; }
+
+.t-table thead .t-col-hdr td {
+  background: var(--kpi-header-bg, #f1efe9);
+  color: var(--color-text-muted);
+  font-family: var(--font-body, system-ui);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-bottom: 2px solid var(--kpi-border-heavy);
+  text-align: right;
+}
+
+.t-table thead .t-col-hdr td:first-child {
+  text-align: left;
+  border-right: 2px solid var(--kpi-border-heavy);
+}
+
+.t-table tbody td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--kpi-border);
+  border-right: 1px solid var(--kpi-border);
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.t-table tbody td:first-child {
+  text-align: left;
+  border-right: 2px solid var(--kpi-border-heavy);
+  font-family: var(--font-body, system-ui);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.t-table tbody tr:last-child td { border-bottom: none; }
+
+/* Section header rows (Financial Year / Quarter / Month) */
+.t-table .t-sec td {
+  background: #e8eaed;
+  color: var(--color-text-muted);
+  font-family: var(--font-body, system-ui);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-bottom: 1px solid var(--color-border);
+  border-right: 0;
+  text-align: left;
+}
+
+/* Current period row (highlighted) */
+.t-table .t-row-current td {
+  background: var(--kpi-today-col-bg, #fbf9f3);
+  font-weight: 700;
+}
+
+/* Combined column gets a 2px left border to separate */
+.t-table .t-combined {
+  border-left: 2px solid var(--kpi-border-heavy);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Numeric cell helpers */
+.t-table .t-num { color: var(--color-text); }
+.t-table .t-num-empty { color: var(--color-text-faint, #c4c0b8); }
+
+/* Δ vs Prev cell */
+.t-table .t-chg-cell { border-right: 0; }
+.t-table .t-chg.t-pos { color: var(--kpi-green); font-weight: 600; }
+.t-table .t-chg.t-neg { color: var(--kpi-red);   font-weight: 600; }
+.t-table .t-chg.t-neu { color: var(--color-text-faint, #aaa); }
+
+/* Banded rows */
+.t-table tbody tr:nth-child(even):not(.t-sec):not(.t-row-current) {
+  background: var(--kpi-band, #faf8f4);
+}
+.t-table tbody tr:hover:not(.t-sec) {
+  background: color-mix(in srgb, var(--color-primary, #0958d9) 6%, transparent);
+}
+
+.t-loading {
+  padding: 20px;
+  text-align: center;
+  font-family: var(--kpi-mono);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Make the ALL pill button visually distinct */
+.exchange-btn[data-exchange="total"] {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 760px) {
+  .t-table { font-size: 11px; }
+  .t-table tbody td, .t-table thead td { padding: 3px 6px; }
+  .t-c-label { width: 30%; }
+}
