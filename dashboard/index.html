@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exchange Analytics — NSE & BSE Trading Revenue Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="./base.css">
+<link rel="stylesheet" href="./style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Loading NSE data...</div>
+  </div>
+</div>
+
+<div class="dashboard">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <svg id="logoSvg" width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Exchange Analytics">
+        <rect x="2" y="2" width="32" height="32" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+        <path d="M10 24V16l5 8V16" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 20c0-2.2 4-2.2 4 0s-4 2.2-4 4 4 2.2 4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <rect x="10" y="10" width="16" height="1.5" rx="0.75" fill="var(--color-primary)" opacity="0.3"/>
+      </svg>
+      <div>
+        <div class="logo-text" id="logoText">NSE Analytics</div>
+        <div class="logo-sub">Trading Intelligence</div>
+      </div>
+    </div>
+
+    <!-- Exchange Switcher Pill -->
+    <div class="exchange-pill">
+      <button class="exchange-btn active" data-exchange="nse">NSE</button>
+      <button class="exchange-btn" data-exchange="bse">BSE</button>
+      <button class="exchange-btn" data-exchange="mcx">MCX</button>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebarNav">
+      <!-- Nav items populated dynamically per exchange -->
+    </nav>
+
+
+  </aside>
+
+  <!-- LATEST REVENUE BANNER -->
+  <div id="latestRevBanner" class="latest-rev-banner"></div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:var(--space-3)">
+      <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <h1 class="header-title" id="headerTitle">Revenue Summary</h1>
+    </div>
+    <div class="header-right">
+      <div class="header-meta">
+        <span id="currentQuarterSpan">Q4 FY 2026</span>
+        <span style="color:var(--color-text-faint)">|</span>
+        <span id="lastUpdatedSpan">Last Updated: —</span>
+        <span class="live-dot"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" id="mainContent">
+
+    <!-- ===================== TAB 1: REVENUE SUMMARY ===================== -->
+    <section class="tab-content active" id="tab-revenue">
+      <div class="sub-tabs" id="revSubTabs">
+        <button class="sub-tab active" data-subtab="rev-total">Total</button>
+        <button class="sub-tab" data-subtab="rev-options">Options</button>
+        <button class="sub-tab" data-subtab="rev-futures">Futures</button>
+        <button class="sub-tab" data-subtab="rev-cash">Cash</button>
+      </div>
+      <div class="sub-content active" id="subtab-rev-total"></div>
+      <div class="sub-content" id="subtab-rev-options"></div>
+      <div class="sub-content" id="subtab-rev-futures"></div>
+      <div class="sub-content" id="subtab-rev-cash"></div>
+    </section>
+
+    <!-- ===================== TAB 2: PAT PREDICTION / REVENUE PREDICTOR ===================== -->
+    <section class="tab-content" id="tab-prediction">
+      <!-- NSE: Full PAT Prediction Engine -->
+      <div id="nsePredictionContent">
+        <!-- Revenue Extrapolation Panel -->
+        <div class="chart-panel" style="margin-bottom:var(--space-5)">
+          <div class="chart-title">Q4 FY 2026 Revenue Extrapolation <span class="chart-badge">Data-Driven</span></div>
+          <div class="extrapolation-kpis" id="extrapKpis"></div>
+        </div>
+        <!-- Predicted Quarterly P&L Table -->
+        <div class="chart-panel" style="margin-bottom:var(--space-5)">
+          <div class="chart-title">Predicted Quarterly P&L</div>
+          <div style="overflow-x:auto">
+            <table class="data-table" id="tablePredictedPnL"></table>
+          </div>
+        </div>
+        <!-- PAT PREDICTOR — Daily Revenue Input -->
+        <div class="chart-panel predictor-panel" style="margin-bottom:var(--space-5)">
+          <div class="chart-title">PAT Predictor <span class="chart-badge">Custom Scenario</span></div>
+          <p class="section-desc" style="margin-bottom:var(--space-4)">Enter your estimated average daily trading revenue. The system will compute quarterly revenue, add Other Income, deduct expenses, and derive PAT, EPS, and target share prices.</p>
+          <div class="predictor-input-row">
+            <div class="predictor-main-input">
+              <label for="inputDailyRev">Avg Daily Trading Revenue (₹ Cr)</label>
+              <input type="number" id="inputDailyRev" step="0.1" min="0" placeholder="61.8">
+              <div class="predictor-hint" id="predictorHint"></div>
+            </div>
+            <div class="predictor-params">
+              <div class="param-row">
+                <label>Trading Days / Qtr</label>
+                <input type="number" id="inputTradingDays" value="62" min="1" max="70" step="1" class="param-input">
+              </div>
+              <div class="param-row">
+                <label>Other Income Ratio</label>
+                <input type="number" id="inputOtherIncomeRatio" step="0.1" min="0" max="100" class="param-input">
+                <span class="param-suffix">%</span>
+              </div>
+              <div class="param-row">
+                <label>Tax Rate</label>
+                <input type="number" id="inputTaxRate" value="25.2" step="0.1" min="0" max="50" class="param-input">
+                <span class="param-suffix">%</span>
+              </div>
+              <div class="param-row">
+                <label>Shares Outstanding (Cr)</label>
+                <input type="number" id="inputShares" value="247.5" step="0.1" min="1" class="param-input">
+              </div>
+            </div>
+          </div>
+          <div class="predictor-output" id="predictorOutput"></div>
+          <div class="predictor-pe-section">
+            <h4>Target Share Price</h4>
+            <div class="pe-inputs">
+              <div class="pe-input-group">
+                <label for="predBearPE">Bear PE</label>
+                <input type="number" id="predBearPE" value="25" min="1" max="200" step="1">
+              </div>
+              <div class="pe-input-group">
+                <label for="predBasePE">Base PE</label>
+                <input type="number" id="predBasePE" value="35" min="1" max="200" step="1">
+              </div>
+              <div class="pe-input-group">
+                <label for="predBullPE">Bull PE</label>
+                <input type="number" id="predBullPE" value="45" min="1" max="200" step="1">
+              </div>
+            </div>
+            <div class="pe-results" id="predictorPEResults"></div>
+          </div>
+        </div>
+        <!-- PE Valuation (data-driven from ENRICHED_DATA) -->
+        <div class="chart-panel" style="margin-bottom:var(--space-5)" id="peValuationPanel">
+          <div class="chart-title">Valuation — Data-Driven Estimate <span class="chart-badge">Q4 FY 2026 Extrapolation</span></div>
+          <div class="pe-inputs" id="peInputs">
+            <div class="pe-input-group">
+              <label for="peBear">Bear PE</label>
+              <input type="number" id="peBear" value="25" min="1" max="200" step="1">
+            </div>
+            <div class="pe-input-group">
+              <label for="peBase">Base PE</label>
+              <input type="number" id="peBase" value="35" min="1" max="200" step="1">
+            </div>
+            <div class="pe-input-group">
+              <label for="peBull">Bull PE</label>
+              <input type="number" id="peBull" value="45" min="1" max="200" step="1">
+            </div>
+          </div>
+          <div class="pe-results" id="peResults"></div>
+        </div>
+        <p class="section-desc">Adjust revenue and cost assumptions to forecast PAT. Based on latest quarterly run-rates.</p>
+        <div class="scenario-buttons" id="scenarioButtons">
+          <button class="scenario-btn" data-scenario="bear">Bear (−15%)</button>
+          <button class="scenario-btn active" data-scenario="base">Base Case</button>
+          <button class="scenario-btn" data-scenario="bull">Bull (+15%)</button>
+        </div>
+        <div class="pred-controls">
+          <div class="control-group">
+            <h3>Revenue Forecast (₹ Cr / Quarter)</h3>
+            <div class="slider-row">
+              <label>Options Revenue</label>
+              <input type="range" id="sliderOpt" min="500" max="6000" step="10">
+              <span class="slider-val" id="valOpt"></span>
+            </div>
+            <div class="slider-row">
+              <label>Futures Revenue</label>
+              <input type="range" id="sliderFut" min="50" max="600" step="5">
+              <span class="slider-val" id="valFut"></span>
+            </div>
+            <div class="slider-row">
+              <label>Cash Revenue</label>
+              <input type="range" id="sliderCash" min="50" max="600" step="5">
+              <span class="slider-val" id="valCash"></span>
+            </div>
+          </div>
+          <div class="control-group">
+            <h3>Cost Assumptions (% of Revenue)</h3>
+            <div class="slider-row">
+              <label>Employee Cost</label>
+              <input type="range" id="sliderEmp" min="1" max="10" step="0.1">
+              <span class="slider-val" id="valEmp"></span>
+            </div>
+            <div class="slider-row">
+              <label>Regulatory Fees</label>
+              <input type="range" id="sliderReg" min="1" max="10" step="0.1">
+              <span class="slider-val" id="valReg"></span>
+            </div>
+            <div class="slider-row">
+              <label>Technology</label>
+              <input type="range" id="sliderTech" min="1" max="15" step="0.1">
+              <span class="slider-val" id="valTech"></span>
+            </div>
+            <div class="slider-row">
+              <label>Depreciation</label>
+              <input type="range" id="sliderDep" min="1" max="10" step="0.1">
+              <span class="slider-val" id="valDep"></span>
+            </div>
+            <div class="slider-row">
+              <label>Other Income Ratio</label>
+              <input type="range" id="sliderOther" min="10" max="80" step="1">
+              <span class="slider-val" id="valOther"></span>
+            </div>
+          </div>
+        </div>
+        <div class="pred-result" id="predResult"></div>
+        <div class="chart-grid chart-grid-2">
+          <div class="chart-panel">
+            <div class="chart-title">P&L Waterfall</div>
+            <div class="chart-wrapper"><canvas id="chartWaterfall"></canvas></div>
+          </div>
+          <div class="chart-panel">
+            <div class="chart-title">Historical vs Predicted PAT</div>
+            <div class="chart-wrapper"><canvas id="chartPATHistory"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-panel" style="margin-top:var(--space-4)">
+          <div class="chart-title">P&L Comparison Table</div>
+          <div style="overflow-x:auto">
+            <table class="data-table" id="tablePnL"></table>
+          </div>
+        </div>
+      </div>
+      <!-- BSE: Simple Revenue Predictor -->
+      <div id="bsePredictionContent" style="display:none">
+        <div class="chart-panel" style="margin-bottom:var(--space-5)">
+          <div class="chart-title">Revenue Extrapolation <span class="chart-badge">Q4 FY 2026</span></div>
+          <div class="predictor-cards" id="bsePredictorKpis"></div>
+          <div class="progress-bar-container" style="margin-top:var(--space-4)">
+            <div class="progress-bar">
+              <div class="progress-bar-fill" id="bseProgressBarFill" style="width:0%"></div>
+            </div>
+            <div class="progress-label" id="bseProgressLabel"></div>
+          </div>
+        </div>
+        <div class="chart-panel" style="margin-bottom:var(--space-5)">
+          <div class="chart-title">Revenue Composition — Current Quarter</div>
+          <div style="overflow-x:auto">
+            <table class="data-table" id="tableBseRevComposition"></table>
+          </div>
+        </div>
+      </div>
+      <!-- MCX: Simple Revenue Predictor -->
+      <div id="mcxPredictionContent" style="display:none">
+        <div class="chart-panel" style="margin-bottom:var(--space-5)">
+          <div class="chart-title">Revenue Extrapolation <span class="chart-badge">Current Quarter</span></div>
+          <div class="predictor-cards" id="mcxPredictorKpis"></div>
+          <div class="progress-bar-container" style="margin-top:var(--space-4)">
+            <div class="progress-bar">
+              <div class="progress-bar-fill" id="mcxProgressBarFill" style="width:0%"></div>
+            </div>
+            <div class="progress-label" id="mcxProgressLabel"></div>
+          </div>
+        </div>
+        <div class="chart-panel" style="margin-bottom:var(--space-5)">
+          <div class="chart-title">Revenue Composition — Current Quarter</div>
+          <div style="overflow-x:auto">
+            <table class="data-table" id="tableMcxRevComposition"></table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: Share Analytics (BSE + MCX) -->
+    <section class="tab-content" id="tab-share">
+      <div id="bse-share-inner" style="padding:4px 0">
+        <div class="chart-panel" style="text-align:center;padding:40px;color:var(--color-text-muted)">
+          <div style="font-size:14px;font-weight:600;margin-bottom:8px">Loading share analysis…</div>
+        </div>
+      </div>
+      <div id="mcx-share-inner" style="display:none;padding:4px 0">
+        <div class="chart-panel" style="text-align:center;padding:40px;color:var(--color-text-muted)">
+          <div style="font-size:14px;font-weight:600;margin-bottom:8px">Loading share analysis…</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="./app.js"></script>
+</body>
+</html>

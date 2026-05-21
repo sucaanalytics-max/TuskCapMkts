@@ -1,0 +1,59 @@
+name: NSE Live Turnover Poll
+
+on:
+  schedule:
+    # Every 5 minutes, 3:25–11:00 UTC = 8:55 AM–4:30 PM IST (Mon–Fri)
+    # Covers pre-open (9:00) through post-close (3:30 PM IST)
+    - cron: '*/5 3-10 * * 1-5'
+    - cron: '0,5,10,15,20,25,30 11 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-live-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-live-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run NSE live poller
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/nse_live_poller.py
+
+      - name: Commit data files
+        run: |
+          git config user.name "Research-Tusk"
+          git config user.email "research@tuskinvest.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add dashboard/data/nse_live.json dashboard/data/nse_live_hourly.json dashboard/data/nse_hourly_history.json
+          git diff --cached --quiet && echo "No changes" || \
+            git commit -m "📡 Live update: $(date -u +%Y-%m-%d\ %H:%M\ UTC)"
+          git push || true
+
+      - name: Summary
+        run: |
+          SIZE=$(wc -c < dashboard/data/nse_live.json 2>/dev/null || echo "?")
+          echo "### NSE Live Poll" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time:** $(date -u +%Y-%m-%d\ %H:%M\ UTC)" >> $GITHUB_STEP_SUMMARY
+          echo "- **File size:** ${SIZE} bytes" >> $GITHUB_STEP_SUMMARY

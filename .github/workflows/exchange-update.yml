@@ -1,0 +1,183 @@
+name: Exchange Daily Update
+
+on:
+  schedule:
+    # 6:00 AM IST = 00:30 UTC — picks up yesterday's confirmed data
+    - cron: '30 0 * * 1-5'
+    # 6:00 PM IST = 12:30 UTC — picks up today's data after market close (3:30 PM IST)
+    - cron: '30 12 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      exchange:
+        description: 'Which exchange to update'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - nse
+          - bse
+
+permissions:
+  contents: write
+
+jobs:
+  nse-update:
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.exchange == 'both' || github.event.inputs.exchange == 'nse' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      new_days: ${{ steps.check_new.outputs.new_days }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run NSE pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/nse_pipeline.py
+
+      - name: Check if new data was added
+        id: check_new
+        run: |
+          NEW_DAYS=$(cat .new_days_count 2>/dev/null || echo "0")
+          echo "new_days=$NEW_DAYS" >> $GITHUB_OUTPUT
+          echo "NSE new trading days: $NEW_DAYS"
+
+      - name: Commit NSE data
+        if: steps.check_new.outputs.new_days != '0'
+        run: |
+          git config user.name "Research-Tusk"
+          git config user.email "research@tuskinvest.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add data/dashboard_data.json data/enriched_data.json dashboard/data/nse_dashboard_data.json dashboard/data/nse_enriched_data.json
+          git commit -m "📊 NSE update: $(date +%Y-%m-%d) — ${{ steps.check_new.outputs.new_days }} new day(s)" || true
+          git push
+
+  bse-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [nse-update]
+    if: ${{ always() && (github.event_name == 'schedule' || github.event.inputs.exchange == 'both' || github.event.inputs.exchange == 'bse') }}
+    outputs:
+      new_days: ${{ steps.check_new.outputs.new_days }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Pull latest in case NSE job pushed changes
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run BSE pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/bse_pipeline.py
+
+      - name: Check if new data was added
+        id: check_new
+        run: |
+          NEW_DAYS=$(cat .new_bse_days_count 2>/dev/null || echo "0")
+          echo "new_days=$NEW_DAYS" >> $GITHUB_OUTPUT
+          echo "BSE new trading days: $NEW_DAYS"
+
+      - name: Commit BSE data
+        if: steps.check_new.outputs.new_days != '0'
+        run: |
+          git config user.name "Research-Tusk"
+          git config user.email "research@tuskinvest.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add data/bse_dashboard_data.json data/bse_enriched_data.json dashboard/data/bse_dashboard_data.json dashboard/data/bse_enriched_data.json
+          git commit -m "📊 BSE update: $(date +%Y-%m-%d) — ${{ steps.check_new.outputs.new_days }} new day(s)" || true
+          git push
+
+  bse-share-analysis:
+    needs: [bse-update]
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.bse-update.outputs.new_days != '0') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run BSE share price analysis
+        run: python scripts/bse_share_analysis.py
+
+      - name: Commit analysis
+        run: |
+          git config user.name "Research-Tusk"
+          git config user.email "research@tuskinvest.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add dashboard/data/bse_share_analysis.json
+          git commit -m "📈 BSE share analysis: $(date +%Y-%m-%d)" || true
+          git push
+
+  deploy:
+    needs: [nse-update, bse-update, bse-share-analysis]
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.nse-update.outputs.new_days != '0' || needs.bse-update.outputs.new_days != '0') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger Vercel deploy
+        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
+
+      - name: Summary
+        run: |
+          echo "### Exchange Pipeline Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Date:** $(date +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "- **NSE new days:** ${{ needs.nse-update.outputs.new_days || '0' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **BSE new days:** ${{ needs.bse-update.outputs.new_days || '0' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ✅ Data updated, Vercel deploying" >> $GITHUB_STEP_SUMMARY

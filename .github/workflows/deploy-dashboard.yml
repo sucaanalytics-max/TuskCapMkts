@@ -1,0 +1,23 @@
+name: Deploy Dashboard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dashboard/**'
+      - 'vercel.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger Vercel deploy
+        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
+
+      - name: Summary
+        run: |
+          echo "### Dashboard Deploy Triggered" >> $GITHUB_STEP_SUMMARY
+          echo "- **Date:** $(date +%Y-%m-%d\ %H:%M\ UTC)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** main" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Vercel deploy hook fired" >> $GITHUB_STEP_SUMMARY

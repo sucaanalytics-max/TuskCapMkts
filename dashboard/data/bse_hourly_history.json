@@ -1,0 +1,130 @@
+{
+  "days": [
+    {
+      "date": "2026-04-13",
+      "weekday": 0,
+      "weekday_name": "Monday",
+      "day_type": "normal",
+      "eod_revenue": 8.43,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 8.43,
+          "fraction": 1.0
+        }
+      ]
+    },
+    {
+      "date": "2026-04-14",
+      "weekday": 1,
+      "weekday_name": "Tuesday",
+      "day_type": "normal",
+      "eod_revenue": 8.43,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 8.43,
+          "fraction": 1.0
+        }
+      ]
+    },
+    {
+      "date": "2026-04-15",
+      "weekday": 2,
+      "weekday_name": "Wednesday",
+      "day_type": "pre_expiry",
+      "eod_revenue": 23.31,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 23.31,
+          "fraction": 1.0
+        }
+      ]
+    },
+    {
+      "date": "2026-04-16",
+      "weekday": 3,
+      "weekday_name": "Thursday",
+      "day_type": "expiry",
+      "eod_revenue": 46.18,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 46.18,
+          "fraction": 1.0
+        }
+      ]
+    },
+    {
+      "date": "2026-04-17",
+      "weekday": 4,
+      "weekday_name": "Friday",
+      "day_type": "normal",
+      "eod_revenue": 6.66,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 6.66,
+          "fraction": 1.0
+        }
+      ]
+    },
+    {
+      "date": "2026-04-27",
+      "weekday": 0,
+      "weekday_name": "Monday",
+      "day_type": "normal",
+      "eod_revenue": 6.45,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 6.45,
+          "fraction": 1.0
+        }
+      ]
+    },
+    {
+      "date": "2026-05-08",
+      "weekday": 4,
+      "weekday_name": "Friday",
+      "day_type": "normal",
+      "eod_revenue": 7.81,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 7.81,
+          "fraction": 1.0
+        }
+      ]
+    },
+    {
+      "date": "2026-05-11",
+      "weekday": 0,
+      "weekday_name": "Monday",
+      "day_type": "normal",
+      "eod_revenue": 8.46,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 8.46,
+          "fraction": 1.0
+        }
+      ]
+    },
+    {
+      "date": "2026-05-20",
+      "weekday": 2,
+      "weekday_name": "Wednesday",
+      "day_type": "pre_expiry",
+      "eod_revenue": 28.18,
+      "snapshots": [
+        {
+          "hour_label": "15:30",
+          "total_revenue": 28.18,
+          "fraction": 1.0
+        }
+      ]
+    }
+  ]
+}

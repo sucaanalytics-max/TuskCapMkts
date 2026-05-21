@@ -1,0 +1,47 @@
+{
+  "buildCommand": null,
+  "outputDirectory": "dashboard",
+  "framework": null,
+  "rewrites": [
+    { "source": "/live", "destination": "/live.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/revenue",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=30, stale-while-revalidate=60" }
+      ]
+    },
+    {
+      "source": "/api/live",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=30, stale-while-revalidate=60" }
+      ]
+    },
+    {
+      "source": "/data/(nse|bse)_live.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/data/(nse|bse)_live_hourly.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/data/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*\\.js|.*\\.css|.*\\.html)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "date": "2026-05-08",
+  "weekday": 4,
+  "weekday_name": "Friday",
+  "day_type": "normal",
+  "snapshots": [
+    {
+      "hour_label": "11:00",
+      "captured_ist": "2026-05-08T11:03:10",
+      "elapsed_minutes": 105,
+      "total_revenue": 22.5,
+      "cash_revenue": 3.63,
+      "options_revenue": 17.53,
+      "futures_revenue": 1.34,
+      "has_data": true,
+      "predicted_eod": 80.36,
+      "pred_method": "linear"
+    }
+  ]
+}
