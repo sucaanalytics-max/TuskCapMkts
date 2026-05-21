@@ -234,7 +234,8 @@ html, body {
 .dashboard {
   display: grid;
   grid-template-columns: 220px 1fr;
-  grid-template-rows: 34px 56px 1fr;
+  /* KPI strip is no longer in the topbar — it lives inside <main>. */
+  grid-template-rows: 56px 1fr;
   height: 100dvh;
   background: var(--color-bg);
 }
@@ -363,7 +364,7 @@ html, body {
 
 .header {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -473,7 +474,7 @@ html, body {
 
 .main {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 2;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--space-4);
@@ -484,67 +485,210 @@ html, body {
    LATEST REVENUE BANNER
    ========================= */
 
-.latest-rev-banner {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 0 var(--space-5);
-  background: var(--color-primary);
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: rgba(255,255,255,0.9);
-  white-space: nowrap;
-  overflow: hidden;
+/* ═════════════════════════════════════════════════════════════════════════
+ * EXCEL-STYLE TABLE POLISH (applies to existing data tables across the app)
+ *
+ * Light-touch CSS-only pass to make all numeric tables read like a clean
+ * Excel sheet: monospace tabular numerals, banded rows, right-aligned numbers
+ * by default. Targets existing classes (.data-table, .xl-dow-table,
+ * .xl-period-table) without restructuring any markup.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+.data-table,
+.xl-dow-table,
+.xl-period-table {
+  font-variant-numeric: tabular-nums;
 }
 
-.rev-banner-title {
+.data-table tbody tr:nth-child(even),
+.xl-dow-table tbody tr:nth-child(even),
+.xl-period-table tbody tr:nth-child(even) {
+  background: var(--kpi-band, #faf8f4);
+}
+
+.data-table tbody tr:hover,
+.xl-dow-table tbody tr:hover,
+.xl-period-table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-primary, #0958d9) 7%, transparent);
+}
+
+/* Right-align cells inside numeric tables by default; explicit .label-col or
+ * .text-col cells can opt out. */
+.data-table td:not(.label-col):not(.text-col),
+.xl-dow-table td:not(.label-col):not(.text-col),
+.xl-period-table td:not(.label-col):not(.text-col) {
+  text-align: right;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+ * KPI STRIP — Excel-native grid
+ *
+ * 3 rows (NSE/BSE/MCX) × 7 columns (Exchange, Today, T-1, T-2, T-3, MA45,
+ * Δ vs MA45). Designed for Excel-trained users:
+ *   • monospace tabular numerals so columns align by digit place
+ *   • subtle gridlines + banded rows for fast row tracking
+ *   • Excel green / red for variance (+ / −)
+ *   • ~24px row height (vs Excel's default 21px)
+ *   • compact, dense, no rounded corners
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --kpi-green:        #1b7d3a;   /* Excel-positive */
+  --kpi-red:          #cf1322;   /* Excel-negative */
+  --kpi-border:       #d9d6d0;
+  --kpi-border-heavy: #8a857d;
+  --kpi-band:         #faf8f4;
+  --kpi-header-bg:    #f1efe9;
+  --kpi-today-col-bg: #fbf9f3;
+  --kpi-mono:         'JetBrains Mono','SF Mono','Menlo','Consolas',monospace;
+}
+
+[data-theme="dark"] {
+  --kpi-green:        #52c41a;
+  --kpi-red:          #ff4d4f;
+  --kpi-border:       #2a2a2a;
+  --kpi-border-heavy: #555;
+  --kpi-band:         #181818;
+  --kpi-header-bg:    #1f1f1f;
+  --kpi-today-col-bg: #1c1a16;
+}
+
+.kpi-strip {
+  margin: 0 0 var(--space-4) 0;
+  padding: 0;
+}
+
+.kpi-loading {
+  font-family: var(--kpi-mono);
+  font-size: 11px;
+  color: var(--color-text-muted, #6b6560);
+  padding: 8px 12px;
+  border: 1px solid var(--kpi-border);
+  background: var(--kpi-band);
+}
+
+.kpi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--kpi-mono);
+  font-size: 12px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--kpi-border-heavy);
+  table-layout: fixed;
+}
+
+.kpi-table th,
+.kpi-table td {
+  padding: 5px 10px;
+  height: 24px;
+  border-right: 1px solid var(--kpi-border);
+  border-bottom: 1px solid var(--kpi-border);
+  vertical-align: middle;
+}
+
+.kpi-table th:last-child,
+.kpi-table td:last-child { border-right: 0; }
+
+.kpi-table thead th {
+  background: var(--kpi-header-bg);
   font-weight: 700;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.65);
-  flex-shrink: 0;
+  color: var(--color-text-muted, #6b6560);
+  text-align: right;
+  border-bottom: 2px solid var(--kpi-border-heavy);
 }
 
-.rev-banner-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 10px;
-  background: rgba(255,255,255,0.12);
-  border-radius: 3px;
-  flex-shrink: 0;
+.kpi-table thead th.kpi-corner {
+  text-align: left;
+  width: 11%;
 }
 
-.rev-banner-label {
-  font-size: 10px;
+.kpi-table thead th.kpi-todayhead {
+  background: var(--kpi-today-col-bg);
+  color: var(--color-text, #1a1a1a);
+  border-right: 2px solid var(--kpi-border-heavy);
+}
+
+.kpi-table tbody tr:nth-child(even) { background: var(--kpi-band); }
+.kpi-table tbody tr:hover           { background: color-mix(in srgb, var(--color-primary, #0958d9) 6%, transparent); }
+
+.kpi-table th.kpi-exchange {
+  text-align: left;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.65);
+  font-family: var(--font-body, system-ui);
+  letter-spacing: 0.04em;
+  color: var(--color-text, #1a1a1a);
+  background: var(--kpi-header-bg);
+  border-right: 2px solid var(--kpi-border-heavy);
 }
 
-.rev-banner-value {
-  font-weight: 700;
+.kpi-table .kpi-num {
+  text-align: right;
   font-variant-numeric: tabular-nums;
-  color: #ffffff;
+  white-space: nowrap;
+  position: relative;
+  color: var(--color-text, #1a1a1a);
 }
 
-.rev-banner-date {
-  font-size: 11px;
-  color: rgba(255,255,255,0.7);
-}
-
-.rev-banner-live {
-  font-size: 9px;
+.kpi-table .kpi-num--today {
+  background: var(--kpi-today-col-bg);
+  border-right: 2px solid var(--kpi-border-heavy);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #ffffff;
-  background: rgba(255,255,255,0.25);
-  border-radius: 2px;
-  padding: 1px 4px;
+}
+
+.kpi-celldate {
+  display: block;
+  margin-top: 1px;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted, #6b6560);
+  text-align: right;
+}
+
+.kpi-glyph {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: 10px;
+  width: 9px;
+}
+
+.kpi-up   { color: var(--kpi-green); }
+.kpi-down { color: var(--kpi-red); }
+
+.kpi-live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kpi-green);
+  margin-left: 6px;
+  vertical-align: middle;
+  animation: kpiPulse 2s ease-in-out infinite;
+}
+@keyframes kpiPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+.kpi-table tfoot td.kpi-footnote {
+  padding: 4px 10px;
+  font-size: 10px;
+  font-family: var(--kpi-mono);
+  color: var(--color-text-muted, #6b6560);
+  background: var(--kpi-header-bg);
+  border-top: 1px solid var(--kpi-border-heavy);
+  border-right: 0;
+  text-align: right;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 760px) {
+  .kpi-table { font-size: 11px; }
+  .kpi-table th, .kpi-table td { padding: 4px 6px; }
+  .kpi-celldate { display: none; }
 }
 
 /* =========================
@@ -1702,15 +1846,11 @@ tr.xl-r-cur { background: rgba(37, 99, 235, 0.03); }
 @media (max-width: 1024px) {
   .dashboard {
     grid-template-columns: 1fr;
-    grid-template-rows: 34px 56px 1fr;
+    grid-template-rows: 56px 1fr;
   }
 
   .sidebar {
     display: none;
-  }
-
-  .latest-rev-banner {
-    grid-column: 1;
   }
 
   .header {

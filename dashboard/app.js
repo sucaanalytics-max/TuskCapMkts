@@ -452,18 +452,72 @@ function updateHeaderInfo() {
 }
 
 // ========================
-// LATEST REVENUE BANNER
+// KPI STRIP (Excel-grid)
+//
+// Renders the 3×7 KPI strip near the top of every tab:
+//
+//   EXCHANGE │ TODAY     │ T-1   │ T-2   │ T-3   │ MA45  │ Δ MA45
+//   ─────────┼───────────┼───────┼───────┼───────┼───────┼─────────
+//      NSE   │ 28.80 ▲   │ 26.45 │ 27.10 │ 25.80 │ 26.42 │ +9.0%
+//      BSE   │ ...
+//      MCX   │ ...
+//
+// Today = live revenue (NSE/BSE direct fetch, MCX from Supabase relay).
+// T-1/T-2/T-3 = last 3 EOD days from {exchange}_dashboard_data.json daily array
+// (excluding today's date if present).
+// MA45 = trailing 45-day mean of total_rev from the same array.
+// Δ MA45 = (today / MA45 − 1) × 100  — Excel green if positive, red if negative.
 // ========================
 
-async function updateLatestRevBanner() {
-  const el = document.getElementById('latestRevBanner');
-  if (!el) return;
+const KPI_EXCHANGES = ['nse', 'bse', 'mcx'];
+let _kpiDashboardCache = {};   // {exchange: parsed dashboard_data.json}
 
+function _fmtCr(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function _fmtPct(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const s = n >= 0 ? '+' : '';
+  return s + n.toFixed(1) + '%';
+}
+
+// ── Data assembly ─────────────────────────────────────────────────────────
+async function _loadDashJSON(exchange) {
+  if (_kpiDashboardCache[exchange]) return _kpiDashboardCache[exchange];
+  try {
+    const r = await fetch(`./data/${exchange}_dashboard_data.json`);
+    if (!r.ok) return null;
+    const j = await r.json();
+    _kpiDashboardCache[exchange] = j;
+    return j;
+  } catch { return null; }
+}
+
+function _historyFromDash(data, todayISO) {
+  // Returns { trail: [T-1, T-2, T-3, ...], ma45: number } where trail is
+  // sorted most-recent-first and excludes any row matching todayISO.
+  if (!data) return { trail: [], ma45: null };
+  const daily = data.daily_all || data.daily || [];
+  const sorted = [...daily].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const past = sorted.filter(r => r.date !== todayISO && r.total_rev != null);
+  const trail = past.slice(-45).reverse();    // [most recent, …, oldest within 45]
+  const ma45Window = past.slice(-45);
+  const ma45 = ma45Window.length
+    ? ma45Window.reduce((s, r) => s + Number(r.total_rev || 0), 0) / ma45Window.length
+    : null;
+  return { trail, ma45 };
+}
+
+// ── Live-revenue fetch (mirrors the previous banner's 3-tier fallback) ────
+async function _loadLiveRevenues() {
   const bust = Date.now();
   let nse = null, bse = null, mcx = null;
 
-  // 1. Try /api/revenue — fetches directly from NSE/BSE websites on demand
-  //    plus MCX from mcx_snapshots Supabase (relay writes from user's Mac).
   try {
     const res = await fetch('/api/revenue?t=' + bust);
     if (res.ok) {
@@ -472,10 +526,8 @@ async function updateLatestRevBanner() {
       bse = data.bse;
       mcx = data.mcx;
     }
-  } catch(e) { /* fall through */ }
+  } catch (e) { /* fall through */ }
 
-  // 2. Fall back to /api/live (GitHub-hosted live JSON, updated every 5 min by Actions).
-  //    MCX has no GitHub fallback — relay is the sole writer to Supabase.
   const needNse = !nse || !nse.has_data;
   const needBse = !bse || !bse.has_data;
   if (needNse || needBse) {
@@ -493,62 +545,119 @@ async function updateLatestRevBanner() {
     }
   }
 
-  // 3. Final fallback — latest completed day from historical dashboard JSON.
-  const needNse2 = !nse || !nse.has_data;
-  const needBse2 = !bse || !bse.has_data;
-  const needMcx2 = !mcx || !mcx.has_data;
-  if (needNse2 || needBse2 || needMcx2) {
-    const [nseDash, bseDash, mcxDash] = await Promise.all([
-      needNse2 ? fetch('./data/nse_dashboard_data.json').then(r => r.json()).catch(() => null) : null,
-      needBse2 ? fetch('./data/bse_dashboard_data.json').then(r => r.json()).catch(() => null) : null,
-      needMcx2 ? fetch('./data/mcx_dashboard_data.json').then(r => r.json()).catch(() => null) : null,
-    ]);
-    function lastFromDash(data) {
-      if (!data) return null;
-      const daily = data.daily_all || data.daily;
-      if (!daily || !daily.length) return null;
-      const last = daily[daily.length - 1];
-      return { total_revenue: last.total_rev, trade_date: last.date, has_data: true, source: 'historical' };
-    }
-    if (needNse2) nse = lastFromDash(nseDash);
-    if (needBse2) bse = lastFromDash(bseDash);
-    if (needMcx2) mcx = lastFromDash(mcxDash);
-  }
-
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    let d;
-    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
-      d = new Date(dateStr.slice(0, 10) + 'T00:00:00');
-    } else if (/^\d{2}\/\d{2}\/\d{2}$/.test(dateStr)) {
-      const parts = dateStr.split('/');
-      d = new Date('20' + parts[2] + '-' + parts[1] + '-' + parts[0] + 'T00:00:00');
-    } else { return dateStr; }
-    if (isNaN(d.getTime())) return dateStr;
-    return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-  }
-
-  function chip(label, info) {
-    if (!info) return '';
-    const isLive = info.source !== 'historical';
-    const liveTag = isLive ? '<span class="rev-banner-live">LIVE</span>' : '';
-    return '<span class="rev-banner-chip">' +
-      '<span class="rev-banner-label">' + label + '</span>' +
-      liveTag +
-      '<span class="rev-banner-value">₹ ' + Number(info.total_revenue).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Cr</span>' +
-      '<span class="rev-banner-date">' + formatDate(info.trade_date) + '</span>' +
-      '</span>';
-  }
-
-  const hasLive = (nse && nse.source !== 'historical') ||
-                  (bse && bse.source !== 'historical') ||
-                  (mcx && mcx.source !== 'historical');
-  const title = hasLive ? "Today's Revenue" : 'Latest Full Day Revenue';
-  el.innerHTML = '<span class="rev-banner-title">' + title + '</span>' +
-                 chip('NSE', nse) + chip('BSE', bse) + chip('MCX', mcx);
+  return { nse, bse, mcx };
 }
+
+// ── Render ─────────────────────────────────────────────────────────────────
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function _shortDate(dateStr) {
+  if (!dateStr) return '';
+  let d;
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+    d = new Date(dateStr.slice(0, 10) + 'T00:00:00');
+  } else if (/^\d{2}\/\d{2}\/\d{2}$/.test(dateStr)) {
+    const [dd, mm, yy] = dateStr.split('/');
+    d = new Date('20' + yy + '-' + mm + '-' + dd + 'T00:00:00');
+  } else {
+    return dateStr;
+  }
+  if (isNaN(d.getTime())) return dateStr;
+  return d.getDate() + ' ' + MONTHS[d.getMonth()];
+}
+
+function _renderRow(exchange, live, trail, ma45) {
+  const today = live && live.has_data ? Number(live.total_revenue) : null;
+  const todayDate = live ? live.trade_date : null;
+  const isLive = live && live.source && live.source !== 'historical';
+
+  function cell(idx) {
+    const r = trail[idx];
+    if (!r) return '<td class="kpi-num">—<span class="kpi-celldate">—</span></td>';
+    return `<td class="kpi-num">${_fmtCr(r.total_rev)}<span class="kpi-celldate">${_shortDate(r.date)}</span></td>`;
+  }
+
+  const todayCell = today != null
+    ? `<td class="kpi-num kpi-num--today">${_fmtCr(today)}<span class="kpi-celldate">${_shortDate(todayDate)}${isLive ? '<span class="kpi-live-dot" title="LIVE"></span>' : ''}</span></td>`
+    : `<td class="kpi-num kpi-num--today">—</td>`;
+
+  const ma45Cell = ma45 != null
+    ? `<td class="kpi-num">${_fmtCr(ma45)}</td>`
+    : `<td class="kpi-num">—</td>`;
+
+  let deltaCell = '<td class="kpi-num">—</td>';
+  if (today != null && ma45 != null && ma45 !== 0) {
+    const pct = (today / ma45 - 1) * 100;
+    const cls = pct >= 0 ? 'kpi-up' : 'kpi-down';
+    const glyph = pct >= 0 ? '▲' : '▼';
+    deltaCell = `<td class="kpi-num ${cls}"><span class="kpi-glyph">${glyph}</span>${_fmtPct(pct)}</td>`;
+  }
+
+  return (
+    `<tr data-exchange="${exchange}">` +
+    `<th scope="row" class="kpi-exchange">${exchange.toUpperCase()}</th>` +
+    todayCell + cell(0) + cell(1) + cell(2) + ma45Cell + deltaCell +
+    `</tr>`
+  );
+}
+
+async function updateKPIStrip() {
+  const el = document.getElementById('kpiStrip');
+  if (!el) return;
+
+  // Skeleton so the strip's footprint doesn't pop in
+  if (!el.dataset.rendered) {
+    el.innerHTML = '<div class="kpi-loading">Loading KPI strip…</div>';
+  }
+
+  const live = await _loadLiveRevenues();
+  const [nseDash, bseDash, mcxDash] = await Promise.all([
+    _loadDashJSON('nse'),
+    _loadDashJSON('bse'),
+    _loadDashJSON('mcx'),
+  ]);
+
+  const todayISO = (live.nse?.trade_date || live.bse?.trade_date || '').slice(0, 10);
+  const nseHist = _historyFromDash(nseDash, todayISO);
+  const bseHist = _historyFromDash(bseDash, todayISO);
+  const mcxHist = _historyFromDash(mcxDash, todayISO);
+
+  const hasLive = (live.nse?.source && live.nse.source !== 'historical') ||
+                  (live.bse?.source && live.bse.source !== 'historical') ||
+                  (live.mcx?.source && live.mcx.source !== 'historical');
+  const updatedAt = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+
+  el.innerHTML =
+    '<table class="kpi-table">' +
+      '<thead>' +
+        '<tr>' +
+          '<th class="kpi-corner">Exchange</th>' +
+          '<th class="kpi-todayhead">' + (hasLive ? 'Today' : 'Latest') + '</th>' +
+          '<th>T-1</th>' +
+          '<th>T-2</th>' +
+          '<th>T-3</th>' +
+          '<th>MA45</th>' +
+          '<th>Δ vs MA45</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+        _renderRow('nse', live.nse, nseHist.trail, nseHist.ma45) +
+        _renderRow('bse', live.bse, bseHist.trail, bseHist.ma45) +
+        _renderRow('mcx', live.mcx, mcxHist.trail, mcxHist.ma45) +
+      '</tbody>' +
+      '<tfoot>' +
+        '<tr><td colspan="7" class="kpi-footnote">' +
+          'Values in ₹ Cr · ' + (hasLive ? '<span class="kpi-live-dot"></span> LIVE · ' : 'EOD · ') +
+          'Updated ' + updatedAt + ' IST' +
+        '</td></tr>' +
+      '</tfoot>' +
+    '</table>';
+
+  el.dataset.rendered = '1';
+}
+
+// Backwards-compat alias for any callers still using the old name
+const updateLatestRevBanner = updateKPIStrip;
 
 // ========================
 // REBUILD ALL
