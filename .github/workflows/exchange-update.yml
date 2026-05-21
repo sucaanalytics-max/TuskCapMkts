@@ -17,6 +17,7 @@ on:
           - both
           - nse
           - bse
+          - mcx
 
 permissions:
   contents: write
@@ -163,9 +164,126 @@ jobs:
           git commit -m "📈 BSE share analysis: $(date +%Y-%m-%d)" || true
           git push
 
+  mcx-update:
+    needs: [bse-update]
+    if: ${{ always() && (github.event_name == 'schedule' || github.event.inputs.exchange == 'both' || github.event.inputs.exchange == 'mcx') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      changed: ${{ steps.check_changed.outputs.changed }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Pull latest in case prior jobs pushed
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refresh MCX bhavcopy → mcx_daily_revenue
+        env:
+          MCX_SUPABASE_URL: ${{ secrets.MCX_SUPABASE_URL }}
+          MCX_SUPABASE_KEY: ${{ secrets.MCX_SUPABASE_KEY }}
+        run: python scripts/mcx_bhav_refresh.py || true
+
+      - name: Refresh MCX share price → mcx_share_price
+        env:
+          MCX_SUPABASE_URL: ${{ secrets.MCX_SUPABASE_URL }}
+          MCX_SUPABASE_KEY: ${{ secrets.MCX_SUPABASE_KEY }}
+        run: python scripts/mcx_price_refresh.py || true
+
+      - name: Compute commodity signals → mcx_commodity_signals
+        env:
+          MCX_SUPABASE_URL: ${{ secrets.MCX_SUPABASE_URL }}
+          MCX_SUPABASE_KEY: ${{ secrets.MCX_SUPABASE_KEY }}
+        run: python -c "from lib.cron_commodity_signals import compute_commodity_signals; print(compute_commodity_signals(mode='recent'))" || true
+
+      - name: Run MCX pipeline → mcx_dashboard_data.json
+        env:
+          MCX_SUPABASE_URL: ${{ secrets.MCX_SUPABASE_URL }}
+          MCX_SUPABASE_KEY: ${{ secrets.MCX_SUPABASE_KEY }}
+        run: python scripts/mcx_pipeline.py
+
+      - name: Detect MCX output changes
+        id: check_changed
+        run: |
+          if git diff --quiet -- data/mcx_dashboard_data.json data/mcx_enriched_data.json dashboard/data/mcx_dashboard_data.json dashboard/data/mcx_enriched_data.json; then
+            echo "changed=0" >> $GITHUB_OUTPUT
+            echo "MCX outputs unchanged"
+          else
+            echo "changed=1" >> $GITHUB_OUTPUT
+            echo "MCX outputs updated"
+          fi
+
+      - name: Commit MCX data
+        if: steps.check_changed.outputs.changed == '1'
+        run: |
+          git config user.name "Research-Tusk"
+          git config user.email "research@tuskinvest.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add data/mcx_dashboard_data.json data/mcx_enriched_data.json dashboard/data/mcx_dashboard_data.json dashboard/data/mcx_enriched_data.json
+          git commit -m "📊 MCX update: $(date +%Y-%m-%d)" || true
+          git push
+
+  mcx-share-analysis:
+    needs: [mcx-update]
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.mcx-update.outputs.changed == '1') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run MCX share price analysis
+        env:
+          MCX_SUPABASE_URL: ${{ secrets.MCX_SUPABASE_URL }}
+          MCX_SUPABASE_KEY: ${{ secrets.MCX_SUPABASE_KEY }}
+        run: python scripts/mcx_share_analysis.py
+
+      - name: Commit analysis
+        run: |
+          git config user.name "Research-Tusk"
+          git config user.email "research@tuskinvest.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add dashboard/data/mcx_share_analysis.json
+          git commit -m "📈 MCX share analysis: $(date +%Y-%m-%d)" || true
+          git push
+
   deploy:
-    needs: [nse-update, bse-update, bse-share-analysis]
-    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.nse-update.outputs.new_days != '0' || needs.bse-update.outputs.new_days != '0') }}
+    needs: [nse-update, bse-update, bse-share-analysis, mcx-update, mcx-share-analysis]
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.nse-update.outputs.new_days != '0' || needs.bse-update.outputs.new_days != '0' || needs.mcx-update.outputs.changed == '1') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -180,4 +298,5 @@ jobs:
           echo "- **Date:** $(date +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
           echo "- **NSE new days:** ${{ needs.nse-update.outputs.new_days || '0' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **BSE new days:** ${{ needs.bse-update.outputs.new_days || '0' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **MCX changed:** ${{ needs.mcx-update.outputs.changed || '0' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ✅ Data updated, Vercel deploying" >> $GITHUB_STEP_SUMMARY
