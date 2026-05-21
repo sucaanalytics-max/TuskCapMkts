@@ -701,15 +701,24 @@ function _renderRow(exchange, live, trail, ma45) {
     ? `<td class="kpi-num kpi-cell"><span class="kpi-value">${_fmtCr(ma45)}</span><span class="kpi-meta">trailing 45d</span></td>`
     : `<td class="kpi-num kpi-cell">—</td>`;
 
+  // Last 5-day average — from trail (T-1..T-5). Cleaner comparator than
+  // projected-today because both sides are full-day numbers.
+  const last5Vals = trail.slice(0, 5)
+    .map(r => Number(r && r.total_rev))
+    .filter(v => !isNaN(v));
+  const last5Avg = last5Vals.length
+    ? last5Vals.reduce((s, v) => s + v, 0) / last5Vals.length
+    : null;
+
   let deltaCell = '<td class="kpi-num kpi-cell">—</td>';
-  if (todayValue != null && ma45 != null && ma45 !== 0) {
-    const pct   = (todayValue / ma45 - 1) * 100;
+  if (last5Avg != null && ma45 != null && ma45 !== 0) {
+    const pct   = (last5Avg / ma45 - 1) * 100;
     const cls   = pct >= 0 ? 'kpi-up' : 'kpi-down';
     const glyph = pct >= 0 ? '▲' : '▼';
     deltaCell = (
       `<td class="kpi-num kpi-cell kpi-delta ${cls}">` +
         `<span class="kpi-value kpi-value--strong"><span class="kpi-glyph">${glyph}</span>${_fmtPct(pct)}</span>` +
-        `<span class="kpi-meta">${proj.projected ? 'projected' : 'final'}</span>` +
+        `<span class="kpi-meta">5d avg ${_fmtCr(last5Avg)}</span>` +
       '</td>'
     );
   }
@@ -767,7 +776,7 @@ async function updateKPIStrip() {
           '<th>T-2</th>' +
           '<th>T-3</th>' +
           '<th>MA45</th>' +
-          '<th>Δ vs MA45</th>' +
+          '<th>Last 5d vs MA45</th>' +
         '</tr>' +
       '</thead>' +
       '<tbody>' +
@@ -877,23 +886,71 @@ function _tDelta(curr, prev) {
   return `<span class="t-chg ${cls}">${sign}${Math.abs(pct).toFixed(1)} %</span>`;
 }
 
-function _tRow(label, vals, deltaVs, opts = {}) {
-  const cls = opts.current ? 't-row-current' : '';
-  const indent = opts.indent ? ' style="padding-left:18px;color:var(--color-text-secondary)"' : '';
-  let chg = '<span class="t-chg t-neu"></span>';
-  if (deltaVs) chg = _tDelta(vals.combined, deltaVs.combined);
-  return `<tr class="${cls}">
-    <td class="t-label"${indent}>${label}</td>
-    <td>${_tFmt(vals.nse)}</td>
-    <td>${_tFmt(vals.bse)}</td>
-    <td>${_tFmt(vals.mcx)}</td>
-    <td class="t-combined">${_tFmt(vals.combined)}</td>
-    <td class="t-chg-cell">${chg}</td>
+function _tSection(label) {
+  return `<tr class="t-sec"><td colspan="6">${label}</td></tr>`;
+}
+
+// Module-level state so dropdown handlers can re-render rows without
+// re-fetching JSONs.
+const _TOTAL_STATE = { fy: [], q: [], m: [], fyOpts: '', qOpts: '', mOpts: '' };
+
+function _tBuildOpts(values, currentValue) {
+  return values.map(v =>
+    `<option value="${v}"${v === currentValue ? ' selected' : ''}>${v}</option>`
+  ).join('');
+}
+
+function _tRowHTML(section, rowIdx, value, opts, isCurrent) {
+  const cls = isCurrent ? 't-row-current' : '';
+  return `<tr class="${cls}" data-section="${section}" data-row="${rowIdx}">
+    <td class="t-label"><select class="t-row-sel" data-section="${section}" data-row="${rowIdx}">${_tBuildOpts(opts, value)}</select></td>
+    <td class="t-num-cell" data-col="nse">—</td>
+    <td class="t-num-cell" data-col="bse">—</td>
+    <td class="t-num-cell" data-col="mcx">—</td>
+    <td class="t-num-cell t-combined" data-col="combined">—</td>
+    <td class="t-chg-cell" data-col="chg">—</td>
   </tr>`;
 }
 
-function _tSection(label) {
-  return `<tr class="t-sec"><td colspan="6">${label}</td></tr>`;
+function _tRenderRow(section, rowIdx) {
+  const tr = document.querySelector(`tr[data-section="${section}"][data-row="${rowIdx}"]`);
+  if (!tr) return;
+  const sel = tr.querySelector('select.t-row-sel');
+  const periodVal = sel ? sel.value : null;
+  const all = (DATA && DATA._all) || {};
+  const kind = section === 'fy' ? 'fy' : section === 'q' ? 'quarter' : 'month';
+  const vals = periodVal ? _totalSumPeriod(section, periodVal, all, kind)
+                         : { nse: null, bse: null, mcx: null, combined: null };
+  tr.querySelector('[data-col="nse"]').innerHTML      = _tFmt(vals.nse);
+  tr.querySelector('[data-col="bse"]').innerHTML      = _tFmt(vals.bse);
+  tr.querySelector('[data-col="mcx"]').innerHTML      = _tFmt(vals.mcx);
+  tr.querySelector('[data-col="combined"]').innerHTML = _tFmt(vals.combined);
+}
+
+function _tRenderDelta(section, rowIdx) {
+  // Delta = current row's Combined / next row's Combined - 1
+  const tr     = document.querySelector(`tr[data-section="${section}"][data-row="${rowIdx}"]`);
+  const trNext = document.querySelector(`tr[data-section="${section}"][data-row="${rowIdx + 1}"]`);
+  if (!tr) return;
+  if (!trNext) {
+    tr.querySelector('[data-col="chg"]').innerHTML = '<span class="t-chg t-neu">—</span>';
+    return;
+  }
+  const all  = (DATA && DATA._all) || {};
+  const kind = section === 'fy' ? 'fy' : section === 'q' ? 'quarter' : 'month';
+  const cur  = _totalSumPeriod(section, tr.querySelector('select').value, all, kind);
+  const nxt  = _totalSumPeriod(section, trNext.querySelector('select').value, all, kind);
+  tr.querySelector('[data-col="chg"]').innerHTML = _tDelta(cur.combined, nxt.combined);
+}
+
+function _tRefreshSection(section) {
+  // Re-render every row in a section + each row's delta
+  document.querySelectorAll(`tr[data-section="${section}"]`).forEach(tr => {
+    _tRenderRow(section, parseInt(tr.dataset.row, 10));
+  });
+  document.querySelectorAll(`tr[data-section="${section}"]`).forEach(tr => {
+    _tRenderDelta(section, parseInt(tr.dataset.row, 10));
+  });
 }
 
 function buildTotalCombinedView() {
@@ -905,77 +962,89 @@ function buildTotalCombinedView() {
     return;
   }
 
-  // ── Discover top FY / Quarter / Month options from NSE (most complete history)
-  const qList = (all.nse.quarterly || []).slice().sort((a, b) => (a.quarter < b.quarter ? 1 : -1));   // newest first
+  // ── Build option lists from NSE (most complete history) ──
+  // Quarters newest-first
+  const qList = (all.nse.quarterly || []).slice().sort((a, b) => (a.quarter < b.quarter ? 1 : -1));
+  const qOpts = qList.map(q => q.quarter);
+  // Months newest-first
   const mList = (all.nse.monthly   || []).slice().sort((a, b) => ((a.month||a.label) < (b.month||b.label) ? 1 : -1));
-
-  // FY list, derived from quarter names
-  const fySet = [];
+  const mOpts = mList.map(m => m.month || m.label);
+  // Financial Years derived from quarters
+  const fyOpts = [];
   qList.forEach(q => {
     const m = q.quarter.match(/FY \d{4}/);
-    if (m && !fySet.includes(m[0])) fySet.push(m[0]);
+    if (m && !fyOpts.includes(m[0])) fyOpts.push(m[0]);
   });
 
-  // ── Build aggregated rows
-  const fyRows = [];
-  if (fySet[0]) fyRows.push({ label: fySet[0], vals: _totalSumPeriod('fy', fySet[0], all, 'fy'), current: true });
-  if (fySet[1]) fyRows.push({ label: fySet[1], vals: _totalSumPeriod('fy', fySet[1], all, 'fy') });
-  if (fySet[2]) fyRows.push({ label: fySet[2], vals: _totalSumPeriod('fy', fySet[2], all, 'fy') });
+  // ── Defaults ──
+  // FY: current, previous, 2-back
+  const fyDefaults = [fyOpts[0], fyOpts[1], fyOpts[2]].filter(Boolean);
 
-  const qPicks = [qList[0], qList[1], qList[2], qList[3]].filter(Boolean);
-  const qRows = qPicks.map((q, i) => ({
-    label: q.quarter,
-    vals: _totalSumPeriod('quarter', q.quarter, all, 'quarter'),
-    current: i === 0,
-  }));
+  // Quarter: current, prev1, prev2, same-Q-last-FY  (e.g. Q1 2027 → Q4 2026 → Q3 2026 → Q1 2026)
+  const qDefaults = [];
+  if (qOpts[0]) qDefaults.push(qOpts[0]);
+  if (qOpts[1]) qDefaults.push(qOpts[1]);
+  if (qOpts[2]) qDefaults.push(qOpts[2]);
+  const cur = qOpts[0];
+  if (cur) {
+    const match = cur.match(/Q(\d) FY (\d{4})/);
+    if (match) {
+      const lastFYLabel = `Q${match[1]} FY ${parseInt(match[2], 10) - 1}`;
+      if (qOpts.includes(lastFYLabel) && !qDefaults.includes(lastFYLabel)) {
+        qDefaults.push(lastFYLabel);
+      }
+    }
+  }
+  // Pad to 4 rows with the next-oldest quarter if needed
+  while (qDefaults.length < 4) {
+    const fallback = qOpts.find(q => !qDefaults.includes(q));
+    if (!fallback) break;
+    qDefaults.push(fallback);
+  }
 
-  const mPicks = [mList[0], mList[1], mList[2]].filter(Boolean);
-  const mRows = mPicks.map((m, i) => ({
-    label: m.month || m.label,
-    vals: _totalSumPeriod('month', m.month || m.label, all, 'month'),
-    current: i === 0,
-  }));
+  // Month: current, prev, prev-prev
+  const mDefaults = [mOpts[0], mOpts[1], mOpts[2]].filter(Boolean);
 
-  // ── Render
+  // ── Render skeleton ──
   let html = '';
   html += '<div class="t-card">';
-  html += '<div class="t-card-header">Cross-Exchange Revenue · ₹ Cr · daily avg</div>';
+  html += '<div class="t-card-header">Cross-Exchange Revenue · ₹ Cr · daily avg <span class="t-card-hint">(click any row to change period)</span></div>';
   html += '<table class="t-table"><colgroup>' +
     '<col class="t-c-label"><col class="t-c-x"><col class="t-c-x"><col class="t-c-x"><col class="t-c-tot"><col class="t-c-chg">' +
     '</colgroup>';
   html += '<thead><tr class="t-col-hdr">' +
-    '<td>Period</td><td>NSE</td><td>BSE</td><td>MCX</td><td>Combined</td><td>vs Prev</td>' +
+    '<td>Period</td><td>NSE</td><td>BSE</td><td>MCX</td><td>Combined</td><td>vs row below</td>' +
     '</tr></thead>';
   html += '<tbody>';
 
-  // Financial Year section
   html += _tSection('Financial Year');
-  for (let i = 0; i < fyRows.length; i++) {
-    const r = fyRows[i];
-    const prev = fyRows[i + 1];
-    html += _tRow(r.label, r.vals, prev ? prev.vals : null, { current: r.current });
-  }
+  fyDefaults.forEach((v, i) => { html += _tRowHTML('fy', i, v, fyOpts, i === 0); });
 
-  // Quarter section
   html += _tSection('Quarter');
-  for (let i = 0; i < qRows.length; i++) {
-    const r = qRows[i];
-    const prev = qRows[i + 1];
-    html += _tRow(r.label, r.vals, prev ? prev.vals : null, { current: r.current });
-  }
+  qDefaults.forEach((v, i) => { html += _tRowHTML('q', i, v, qOpts, i === 0); });
 
-  // Month section
   html += _tSection('Month');
-  for (let i = 0; i < mRows.length; i++) {
-    const r = mRows[i];
-    const prev = mRows[i + 1];
-    html += _tRow(r.label, r.vals, prev ? prev.vals : null, { current: r.current });
-  }
+  mDefaults.forEach((v, i) => { html += _tRowHTML('m', i, v, mOpts, i === 0); });
 
   html += '</tbody></table>';
   html += '</div>';
 
   container.innerHTML = html;
+
+  // ── Wire dropdowns ──
+  container.querySelectorAll('select.t-row-sel').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const section = sel.dataset.section;
+      const rowIdx  = parseInt(sel.dataset.row, 10);
+      _tRenderRow(section, rowIdx);
+      // Delta on the changed row + delta on the row above (which uses this as denominator)
+      _tRenderDelta(section, rowIdx);
+      if (rowIdx > 0) _tRenderDelta(section, rowIdx - 1);
+    });
+  });
+
+  // ── Initial fill ──
+  ['fy', 'q', 'm'].forEach(_tRefreshSection);
 }
 
 // ========================
