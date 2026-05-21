@@ -12,12 +12,24 @@ Resources:
   price        — share price + analytics
   commodities  — per-commodity breakdown
 
-Lazy imports keep cold start light: only the requested resource's module is
-loaded per request.
+Top-level imports (instead of lazy) so Vercel's Python tracer bundles lib/.
+Cold-start delta is negligible (~10-50ms) and worth the deployment correctness.
 """
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import json
+
+from lib.mcx_handlers.refresh     import handler as _RefreshHandler
+from lib.mcx_handlers.history     import handler as _HistoryHandler
+from lib.mcx_handlers.price       import handler as _PriceHandler
+from lib.mcx_handlers.commodities import handler as _CommoditiesHandler
+
+_HANDLER_MAP = {
+    "refresh":     _RefreshHandler,
+    "history":     _HistoryHandler,
+    "price":       _PriceHandler,
+    "commodities": _CommoditiesHandler,
+}
 
 
 class handler(BaseHTTPRequestHandler):
@@ -36,31 +48,19 @@ class handler(BaseHTTPRequestHandler):
     def _resolve_handler(self):
         qs = parse_qs(urlparse(self.path).query)
         resource = (qs.get("resource") or ["refresh"])[0].lower()
-        if resource == "refresh":
-            from lib.mcx_handlers.refresh import handler as inner
-            return inner
-        if resource == "history":
-            from lib.mcx_handlers.history import handler as inner
-            return inner
-        if resource == "price":
-            from lib.mcx_handlers.price import handler as inner
-            return inner
-        if resource == "commodities":
-            from lib.mcx_handlers.commodities import handler as inner
-            return inner
-        return None
+        return _HANDLER_MAP.get(resource)
 
     def _delegate(self, method):
         inner_cls = self._resolve_handler()
         if inner_cls is None:
             self._send_error(400, "Invalid resource (expected: refresh|history|price|commodities)")
             return
-        # Bind inner methods to self so they use this request's rfile/wfile/headers
-        # rather than instantiating a new handler (which would re-parse the socket).
         target = getattr(inner_cls, f"do_{method}", None)
         if target is None:
             self._send_error(405, f"Method {method} not allowed for this resource")
             return
+        # Call the inner method bound to this request handler. BaseHTTPRequestHandler
+        # methods only use self.path / headers / rfile / wfile, all live on `self`.
         target(self)
 
     def do_GET(self):
@@ -70,7 +70,6 @@ class handler(BaseHTTPRequestHandler):
         self._delegate("POST")
 
     def do_OPTIONS(self):
-        # CORS preflight — delegate to inner if it supports it, else minimal response
         inner_cls = self._resolve_handler()
         if inner_cls and getattr(inner_cls, "do_OPTIONS", None):
             inner_cls.do_OPTIONS(self)
