@@ -210,7 +210,8 @@ jobs:
         env:
           MCX_SUPABASE_URL: ${{ secrets.MCX_SUPABASE_URL }}
           MCX_SUPABASE_KEY: ${{ secrets.MCX_SUPABASE_KEY }}
-        run: python -c "from lib.cron_commodity_signals import compute_commodity_signals; print(compute_commodity_signals(mode='recent'))" || true
+        # lib/ lives under dashboard/ (Vercel Python project root), so cd in to resolve imports.
+        run: cd dashboard && python -c "from lib.cron_commodity_signals import compute_commodity_signals; print(compute_commodity_signals(mode='recent'))" || true
 
       - name: Run MCX pipeline → mcx_dashboard_data.json
         env:
