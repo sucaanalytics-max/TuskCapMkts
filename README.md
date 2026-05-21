@@ -58,14 +58,74 @@ Schedule this for **after Friday close** to avoid interrupting mid-session data.
 
 The standalone MCX repo (`MCX/mcx-vercel/`) keeps reading from the same Supabase, so its dashboard continues to work after the relay is repointed.
 
+## Dashboard surface
+
+| Exchange | Tabs |
+|---|---|
+| NSE | Revenue Summary, PAT Prediction Engine |
+| BSE | Revenue Summary, Revenue Predictor, Regression |
+| MCX | Revenue Summary, Daily Predictor, Commodities, Revenue Predictor, Regression |
+
+`dashboard/live.html` (NSE/BSE only — MCX has no static live JSON, the MCX option redirects to the main dashboard's Daily Predictor tab).
+
+## Vercel API surface
+
+3 functions, 9 of headroom on Hobby's 12-function cap.
+
+| Path | Purpose |
+|---|---|
+| `GET /api/live?exchange={nse,bse,mcx}&file={live,hourly,history,share,dashboard}` | Proxies GitHub raw NSE/BSE JSONs; MCX `file=live` short-circuits to Supabase |
+| `GET /api/revenue` | NSE direct fetch + BSE direct fetch + MCX `mcx_snapshots` read → `{nse, bse, mcx, fetched_at}` |
+| `GET /api/mcx?resource={refresh,history,price,commodities}` | Router into `lib/mcx_handlers/` |
+
 ## Repo layout
 
 ```
 exchange-pipeline/
 ├── dashboard/         # Vercel-served static dashboard + API routes
-├── lib/               # Python shared modules (MCX config, cron handlers, API handler bodies)
+│   ├── api/{live.js, revenue.js, mcx.py}
+│   ├── {index,live}.html
+│   ├── app.js, mcx-predictor.js, mcx-commodities.js
+│   └── data/          # JSON outputs committed by workflows
+├── lib/               # Python shared modules
+│   ├── mcx_config.py, cron_commodity_signals.py
+│   └── mcx_handlers/  # extracted handler bodies (refresh/history/price/commodities)
 ├── scripts/           # Pipeline + poller + relay scripts
-├── data/              # Pipeline JSON outputs (older layout)
-├── .github/workflows/ # CI for daily updates + live polling
+├── data/              # Pipeline JSON outputs (older layout, for back-compat)
+├── .github/workflows/ # CI for daily updates + NSE/BSE live polling
 └── vercel.json        # Vercel deploy config
 ```
+
+## One-time manual setup
+
+The repo is functional locally. Before deploying:
+
+1. **Create GitHub repo** — `Research-Tusk/exchange-pipeline` (private). Push the local `main` branch:
+   ```bash
+   cd Working/exchange-pipeline
+   git remote add origin git@github.com:Research-Tusk/exchange-pipeline.git
+   git push -u origin main
+   ```
+   (the gh CLI auth on this machine couldn't create under `Research-Tusk` — needs an account with org write access)
+
+2. **Create Vercel project** linked to the GitHub repo. Output directory: `dashboard`. Add all five env vars from "Environment variables" above to Production, Preview, and Development.
+
+3. **Add GitHub Actions secrets**: same five plus `VERCEL_DEPLOY_HOOK`.
+
+4. **One-time MCX share-price backfill** (for the Regression tab):
+   ```bash
+   source .env && export $(grep -v '^#' .env | xargs)
+   python scripts/mcx_price_refresh.py --backfill 600
+   python scripts/mcx_share_analysis.py
+   git add dashboard/data/mcx_share_analysis.json
+   git commit -m "📈 MCX share analysis: initial backfill"
+   git push
+   ```
+
+5. **Repoint MCX relay** (after Friday close — see "Repointing the relay" above).
+
+## Architectural notes
+
+- **NSE/BSE-vs-MCX asymmetry**: NSE/BSE live data is polled by GitHub Actions and committed to `dashboard/data/*_live.json`. MCX is Akamai-blocked from cloud, so the local Mac relay writes `mcx_snapshots` to Supabase, and `/api/mcx?resource=refresh` reads from there. No `mcx_live.json` is materialised on disk.
+- **Function consolidation**: 5 MCX serverless functions from `MCX/mcx-vercel/` collapse into one `/api/mcx?resource=...` router in `dashboard/api/mcx.py`. Lazy-imports keep cold start light.
+- **Dual Supabase**: NSE/BSE Supabase (env `SUPABASE_*`) and MCX Supabase (env `MCX_SUPABASE_*`) are read in parallel; the two are intentionally not consolidated to keep the standalone repos deployable.

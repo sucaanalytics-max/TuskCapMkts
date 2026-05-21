@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NSE Live · Revenue</title>
+  <title>Live · Revenue</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -373,7 +373,24 @@ function SegmentsTable({ marketState }) {
 // ---------------------------------------------------------------------------
 const POLL_MS = 5 * 60 * 1000;
 
+// NSE/BSE share the same live JSON shape (history, market_status, revenue).
+// MCX is asymmetric — its live data lives in Supabase (relay-written), and the
+// dashboard shape returned by /api/mcx?resource=refresh is completely different
+// from NSE/BSE. Rather than maintain two render trees, the MCX option links out
+// to the main dashboard's MCX Daily Predictor tab which knows how to render it.
+const EXCHANGES = [
+  { id: 'nse', label: 'NSE' },
+  { id: 'bse', label: 'BSE' },
+  { id: 'mcx', label: 'MCX' },
+];
+
 function App() {
+  const initialExchange = (() => {
+    const fromHash = (window.location.hash || '').replace(/^#/, '').toLowerCase();
+    return EXCHANGES.some(e => e.id === fromHash) ? fromHash : 'nse';
+  })();
+
+  const [exchange,    setExchange]    = useState(initialExchange);
   const [live,        setLive]        = useState(null);
   const [hourly,      setHourly]      = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
@@ -381,12 +398,18 @@ function App() {
   const [error,       setError]       = useState(null);
   const [loading,     setLoading]     = useState(true);
 
+  // MCX shape mismatch: route users to the main dashboard's MCX Predictor tab.
+  if (exchange === 'mcx') {
+    window.location.replace('./index.html');
+    return null;
+  }
+
   const fetchAll = useCallback(async () => {
     try {
       const bust = Date.now();
       const [liveRes, hourlyRes] = await Promise.all([
-        fetch(`./data/nse_live.json?t=${bust}`),
-        fetch(`./data/nse_live_hourly.json?t=${bust}`).catch(() => null),
+        fetch(`./data/${exchange}_live.json?t=${bust}`),
+        fetch(`./data/${exchange}_live_hourly.json?t=${bust}`).catch(() => null),
       ]);
       if (!liveRes.ok) throw new Error(`HTTP ${liveRes.status}`);
       const liveData = await liveRes.json();
@@ -402,16 +425,24 @@ function App() {
       setLoading(false);
       setPulse(p => !p);
     } catch (e) {
-      setError("Could not load nse_live.json");
+      setError(`Could not load ${exchange}_live.json`);
       setLoading(false);
     }
-  }, []);
+  }, [exchange]);
 
   useEffect(() => {
+    setLoading(true);
     fetchAll();
     const id = setInterval(fetchAll, POLL_MS);
     return () => clearInterval(id);
   }, [fetchAll]);
+
+  useEffect(() => {
+    const newHash = '#' + exchange;
+    if (window.location.hash !== newHash) {
+      window.history.replaceState(null, '', newHash);
+    }
+  }, [exchange]);
 
   const marketStatus = live?.market_status;
   const revenue      = live?.revenue;
@@ -434,7 +465,23 @@ function App() {
           <div className="flex items-center gap-4">
             <a href="/" className="text-zinc-700 hover:text-zinc-400 transition-colors text-xs">← Dashboard</a>
             <span className="text-zinc-900">|</span>
-            <span className="font-bold text-sm tracking-tight">NSE Live</span>
+            <span className="font-bold text-sm tracking-tight">{exchange.toUpperCase()} Live</span>
+            <div className="flex items-center gap-1 ml-2">
+              {EXCHANGES.map(ex => (
+                <button
+                  key={ex.id}
+                  onClick={() => setExchange(ex.id)}
+                  className={`px-2 py-0.5 text-[10px] tabular-nums tracking-wide rounded-sm transition-colors ${
+                    exchange === ex.id
+                      ? 'bg-zinc-800 text-white'
+                      : 'text-zinc-600 hover:text-zinc-300'
+                  }`}
+                  title={ex.id === 'mcx' ? 'MCX live opens in main dashboard' : `Switch to ${ex.label}`}
+                >
+                  {ex.label}
+                </button>
+              ))}
+            </div>
             {nifty && (
               <div className="flex items-center gap-2">
                 <span className="text-zinc-600 text-xs">NIFTY 50</span>
