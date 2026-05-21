@@ -451,19 +451,22 @@ async function updateLatestRevBanner() {
   if (!el) return;
 
   const bust = Date.now();
-  let nse = null, bse = null;
+  let nse = null, bse = null, mcx = null;
 
-  // 1. Try /api/revenue — fetches directly from NSE & BSE websites on demand
+  // 1. Try /api/revenue — fetches directly from NSE/BSE websites on demand
+  //    plus MCX from mcx_snapshots Supabase (relay writes from user's Mac).
   try {
     const res = await fetch('/api/revenue?t=' + bust);
     if (res.ok) {
       const data = await res.json();
       nse = data.nse;
       bse = data.bse;
+      mcx = data.mcx;
     }
   } catch(e) { /* fall through */ }
 
-  // 2. Fall back to /api/live (GitHub-hosted live JSON, updated every 5 min by Actions)
+  // 2. Fall back to /api/live (GitHub-hosted live JSON, updated every 5 min by Actions).
+  //    MCX has no GitHub fallback — relay is the sole writer to Supabase.
   const needNse = !nse || !nse.has_data;
   const needBse = !bse || !bse.has_data;
   if (needNse || needBse) {
@@ -481,13 +484,15 @@ async function updateLatestRevBanner() {
     }
   }
 
-  // 3. Final fallback — latest completed day from historical dashboard JSON
+  // 3. Final fallback — latest completed day from historical dashboard JSON.
   const needNse2 = !nse || !nse.has_data;
   const needBse2 = !bse || !bse.has_data;
-  if (needNse2 || needBse2) {
-    const [nseDash, bseDash] = await Promise.all([
+  const needMcx2 = !mcx || !mcx.has_data;
+  if (needNse2 || needBse2 || needMcx2) {
+    const [nseDash, bseDash, mcxDash] = await Promise.all([
       needNse2 ? fetch('./data/nse_dashboard_data.json').then(r => r.json()).catch(() => null) : null,
       needBse2 ? fetch('./data/bse_dashboard_data.json').then(r => r.json()).catch(() => null) : null,
+      needMcx2 ? fetch('./data/mcx_dashboard_data.json').then(r => r.json()).catch(() => null) : null,
     ]);
     function lastFromDash(data) {
       if (!data) return null;
@@ -498,6 +503,7 @@ async function updateLatestRevBanner() {
     }
     if (needNse2) nse = lastFromDash(nseDash);
     if (needBse2) bse = lastFromDash(bseDash);
+    if (needMcx2) mcx = lastFromDash(mcxDash);
   }
 
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -527,9 +533,12 @@ async function updateLatestRevBanner() {
       '</span>';
   }
 
-  const hasLive = (nse && nse.source !== 'historical') || (bse && bse.source !== 'historical');
+  const hasLive = (nse && nse.source !== 'historical') ||
+                  (bse && bse.source !== 'historical') ||
+                  (mcx && mcx.source !== 'historical');
   const title = hasLive ? "Today's Revenue" : 'Latest Full Day Revenue';
-  el.innerHTML = '<span class="rev-banner-title">' + title + '</span>' + chip('NSE', nse) + chip('BSE', bse);
+  el.innerHTML = '<span class="rev-banner-title">' + title + '</span>' +
+                 chip('NSE', nse) + chip('BSE', bse) + chip('MCX', mcx);
 }
 
 // ========================
