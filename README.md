@@ -33,6 +33,31 @@ See `.env.example`.
 
 `scripts/mcx_relay.py` runs on the user's Mac via `~/Library/LaunchAgents/com.mcx.relay.plist`. It bypasses the Akamai block on cloud IPs and writes intraday MCX snapshots directly to Supabase. The dashboard reads from Supabase, so the relay must stay running for live MCX data.
 
+### Repointing the relay from MCX/mcx-vercel to exchange-pipeline (one-time)
+
+Schedule this for **after Friday close** to avoid interrupting mid-session data.
+
+1. Populate `.env` in this repo with `MCX_SUPABASE_URL` and `MCX_SUPABASE_KEY`.
+2. Stop the running relay:
+   ```bash
+   launchctl unload ~/Library/LaunchAgents/com.mcx.relay.plist
+   ```
+3. Edit `~/Library/LaunchAgents/com.mcx.relay.plist`. Change two paths:
+   - `ProgramArguments[1]` →
+     `/Users/<you>/.../Documents/Working/exchange-pipeline/scripts/start_relay.sh`
+   - `WorkingDirectory` →
+     `/Users/<you>/.../Documents/Working/exchange-pipeline`
+   Leave the schedule (08:55 IST Mon–Fri), `TimeOut` (54000s), and log paths alone.
+4. Reload:
+   ```bash
+   launchctl load ~/Library/LaunchAgents/com.mcx.relay.plist
+   launchctl list | grep com.mcx.relay
+   ```
+5. Verify next trading morning by tailing `/tmp/mcx_relay_stdout.log`.
+6. Optional cleanup: `com.mcx.daily-verify.plist` and `com.mcx.backtest.plist` reference scripts that don't exist in any repo any more — `launchctl unload` and `rm` if they're still around.
+
+The standalone MCX repo (`MCX/mcx-vercel/`) keeps reading from the same Supabase, so its dashboard continues to work after the relay is repointed.
+
 ## Repo layout
 
 ```
