@@ -1,0 +1,14 @@
+.env
+.env.local
+__pycache__/
+*.pyc
+.new_days_count
+.new_bse_days_count
+.new_mcx_days_count
+node_modules/
+.vercel/
+.next/
+.DS_Store
+turnover_log.csv
+/tmp/
+*.log
