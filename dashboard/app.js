@@ -234,9 +234,11 @@ const EXCHANGE_TABS = {
     { id: 'share',      label: 'Regression',            icon: 'share' },
   ],
   mcx: [
-    { id: 'revenue',    label: 'Revenue Summary',     icon: 'revenue' },
-    { id: 'prediction', label: 'Revenue Predictor',    icon: 'prediction' },
-    { id: 'share',      label: 'Regression',            icon: 'share' },
+    { id: 'revenue',     label: 'Revenue Summary',  icon: 'revenue' },
+    { id: 'predictor',   label: 'Daily Predictor',  icon: 'prediction' },
+    { id: 'commodities', label: 'Commodities',      icon: 'revenue' },
+    { id: 'prediction',  label: 'Revenue Predictor', icon: 'prediction' },
+    { id: 'share',       label: 'Regression',       icon: 'share' },
   ],
 };
 
@@ -251,9 +253,11 @@ const TAB_TITLES = {
     share: 'Share Price Analytics',
   },
   mcx: {
-    revenue: 'Revenue Summary',
-    prediction: 'Revenue Predictor',
-    share: 'Share Price Analytics',
+    revenue:     'Revenue Summary',
+    predictor:   'MCX Daily Predictor',
+    commodities: 'MCX Commodity Analytics',
+    prediction:  'Revenue Predictor',
+    share:       'Share Price Analytics',
   },
 };
 
@@ -295,6 +299,11 @@ function attachTabListeners() {
       setTimeout(() => {
         Object.values(charts).forEach(c => { if (c && c.resize) c.resize(); });
       }, 50);
+      // MCX-only module init (idempotent, defer-loaded scripts may not yet be ready)
+      if (currentExchange === 'mcx') {
+        if (tab === 'predictor' && window.MCXPredictor) window.MCXPredictor.init();
+        if (tab === 'commodities' && window.MCXCommodities) window.MCXCommodities.init();
+      }
     });
   });
 }

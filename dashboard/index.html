@@ -303,9 +303,273 @@
       </div>
     </section>
 
+    <!-- ===================== MCX TAB: DAILY PREDICTOR ===================== -->
+    <!-- Ported from MCX/mcx-vercel/index.html (lines 1193-1426). Only shown when
+         the MCX exchange is active (toggleExchangeContent handles visibility). -->
+    <section class="tab-content mcx-only" id="tab-predictor">
+      <div class="mcx-wrap">
+
+        <!-- Stale data banner -->
+        <div id="staleBanner" class="stale-banner" style="display:none">
+          <span>&#x26A0;</span>
+          <span id="staleBannerText">Relay data is stale</span>
+        </div>
+
+        <!-- Hero -->
+        <div class="hero">
+          <div class="hero-eyebrow" id="heroEyebrow">Today's Projected Revenue</div>
+          <div class="hero-row">
+            <div style="display:flex;align-items:baseline;gap:4px;">
+              <div class="hero-revenue" id="heroRevenue">—</div>
+              <div class="hero-unit">Cr</div>
+            </div>
+            <span class="hero-badge low" id="heroBadge">—</span>
+            <span class="hero-delta muted" id="heroDelta">vs 45d MA: —</span>
+          </div>
+          <div class="hero-sub">
+            <span id="heroDate">—</span>
+            <span id="heroSession">— elapsed</span>
+            <span id="heroRange">range —</span>
+            <span id="heroConfidence">—</span>
+          </div>
+          <div class="hero-progress"><div class="hero-progress-fill" id="heroProgressFill" style="width:0%"></div></div>
+        </div>
+
+        <!-- History cards -->
+        <div class="hist-cards">
+          <div class="hist-card" id="histDay1">
+            <div class="card-label">Day -3</div>
+            <div class="card-value" id="hd1val">—</div>
+            <div class="card-note" id="hd1sub">—</div>
+          </div>
+          <div class="hist-card" id="histDay2">
+            <div class="card-label">Day -2</div>
+            <div class="card-value" id="hd2val">—</div>
+            <div class="card-note" id="hd2sub">—</div>
+          </div>
+          <div class="hist-card" id="histDay3">
+            <div class="card-label">Yesterday</div>
+            <div class="card-value" id="hd3val">—</div>
+            <div class="card-note" id="hd3sub">—</div>
+          </div>
+          <div class="hist-card hist-card--today">
+            <div class="card-label" style="color:var(--mcx-accent)">Today</div>
+            <div class="card-value mcx-accent" id="heroTodayCard">—</div>
+            <div class="card-note" id="heroTodayCardSub">Click Refresh</div>
+          </div>
+          <div class="hist-card hist-card--ma">
+            <div class="card-label">45d MA</div>
+            <div class="card-value" style="color:var(--mcx-accent2)" id="heroMAVal">—</div>
+            <div class="card-note" id="heroMARange">—</div>
+          </div>
+        </div>
+
+        <!-- Sparkline -->
+        <div class="spark-section">
+          <div class="spark-header">
+            <div class="spark-title">45-Day Revenue Trend (₹ Cr/day)</div>
+            <div class="spark-legend">
+              <span class="leg-actual">Actual</span>
+              <span class="leg-ma">45d MA</span>
+              <span class="leg-today">Today</span>
+            </div>
+          </div>
+          <div class="spark-container"><canvas id="sparkChart"></canvas></div>
+        </div>
+
+        <!-- KPI row -->
+        <div class="mcx-card-row">
+          <div class="mcx-card">
+            <div class="card-label">Daily Revenue</div>
+            <div class="card-value mcx-green" id="kpiTotalRev">—</div>
+            <div class="card-note" id="kpiTotalRevLbl">Projected</div>
+          </div>
+          <div class="mcx-card">
+            <div class="card-label">Day Type</div>
+            <div class="card-value" id="kpiDayType">—</div>
+            <div class="card-note" id="kpiDayTypeNote">—</div>
+          </div>
+          <div class="mcx-card">
+            <div class="card-label">Annualized</div>
+            <div class="card-value" id="kpiAnnual">—</div>
+            <div class="card-note">×250 trading days</div>
+          </div>
+          <div class="mcx-card">
+            <div class="card-label">Prem/Notl Ratio</div>
+            <div class="card-value mcx-yellow" id="kpiPremRatio">—</div>
+            <div class="card-note">Options moneyness proxy</div>
+          </div>
+          <div class="mcx-card">
+            <div class="card-label">vs Q3 FY26 Avg</div>
+            <div class="card-value" id="kpiVsQ3">—</div>
+            <div class="card-note">₹10.25 Cr/day baseline</div>
+          </div>
+        </div>
+
+        <!-- Accordion: Snapshot -->
+        <div class="mcx-accordion">
+          <button class="mcx-accordion-trigger" data-acc="snapshot" aria-expanded="false">
+            <span>Revenue Snapshot — Full Breakdown</span>
+            <span class="mcx-accordion-badge" id="snBadgeRev">—</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="mcx-accordion-panel" id="snapshot-panel">
+            <div class="g2" style="gap:20px">
+              <div>
+                <div class="kv-section-label">Volume</div>
+                <div class="mcx-kv"><span class="kv-key">Futures Notional</span><span class="kv-val" id="snFutNotl">—</span></div>
+                <div class="mcx-kv"><span class="kv-key">Options Notional</span><span class="kv-val" id="snOptNotl">—</span></div>
+                <div class="mcx-kv"><span class="kv-key">Options Premium</span><span class="kv-val" id="snOptPrem">—</span></div>
+                <div class="mcx-kv"><span class="kv-key">Total F&amp;O Notional</span><span class="kv-val" id="snTotalNotl">—</span></div>
+                <div class="mcx-sep--light"></div>
+                <div class="mcx-kv"><span class="kv-key">Active Futures</span><span class="kv-val" id="snFutContracts">—</span></div>
+                <div class="mcx-kv"><span class="kv-key">Active Options</span><span class="kv-val" id="snOptContracts">—</span></div>
+              </div>
+              <div>
+                <div class="kv-section-label">Revenue</div>
+                <div class="mcx-kv"><span class="kv-key">Futures TX <span class="mcx-muted" id="snFutFormula"></span></span><span class="kv-val mcx-green" id="snFutRev">—</span></div>
+                <div class="mcx-kv"><span class="kv-key">Options TX <span class="mcx-muted" id="snOptFormula"></span></span><span class="kv-val mcx-green" id="snOptRev">—</span></div>
+                <div class="mcx-sep"></div>
+                <div class="mcx-kv"><span class="kv-key" style="font-weight:700" id="snTotalLabel">Projected Total</span><span class="kv-val mcx-accent" style="font-size:16px" id="snTotalRev">—</span></div>
+                <div class="mcx-kv"><span class="kv-key">Range (±uncertainty)</span><span class="kv-val mcx-yellow" id="snRevRange">—</span></div>
+                <div class="mcx-sep--light"></div>
+                <div class="mcx-kv"><span class="kv-key">vs Model Baseline (₹9.05/d)</span><span class="kv-val" id="corrModelDelta">—</span></div>
+                <div class="mcx-kv"><span class="kv-key">Annualized Run-Rate</span><span class="kv-val" id="snAnnual">—</span></div>
+              </div>
+            </div>
+            <div class="mcx-meta-line">
+              <span id="snDataSource">—</span> · <span id="snStatus">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion: Charts -->
+        <div class="mcx-accordion">
+          <button class="mcx-accordion-trigger" data-acc="charts" aria-expanded="false">
+            <span>Commodity Breakdown — Charts</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="mcx-accordion-panel" id="charts-panel">
+            <div class="g2" style="margin-bottom:16px">
+              <div class="chart-wrap">
+                <div class="card-label">Futures by Commodity (₹ Cr)</div>
+                <div class="bar-container"><canvas id="futChart"></canvas></div>
+              </div>
+              <div class="chart-wrap">
+                <div class="card-label">Options Premium by Commodity (₹ Cr)</div>
+                <div class="bar-container"><canvas id="optChart"></canvas></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion: Contracts -->
+        <div class="mcx-accordion">
+          <button class="mcx-accordion-trigger" data-acc="contracts" aria-expanded="false">
+            <span>Live Contracts — Top Futures &amp; Options</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="mcx-accordion-panel" id="contracts-panel">
+            <div class="g2">
+              <div>
+                <div class="card-label" style="margin-bottom:6px">Top Futures by Notional</div>
+                <table class="mcx-dtable">
+                  <thead><tr><th>Symbol</th><th class="num">Notional (Cr)</th><th class="num">Share</th></tr></thead>
+                  <tbody id="futTable"></tbody>
+                </table>
+              </div>
+              <div>
+                <div class="card-label" style="margin-bottom:6px">Top Options by Premium</div>
+                <table class="mcx-dtable">
+                  <thead><tr><th>Symbol</th><th class="num">Premium (Cr)</th><th class="num">P/N%</th></tr></thead>
+                  <tbody id="optTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion: Intraday -->
+        <div class="mcx-accordion">
+          <button class="mcx-accordion-trigger" data-acc="intraday" aria-expanded="false">
+            <span>Intraday Volume Curve — MCX Session Profile</span>
+            <span class="mcx-accordion-badge" id="intradayBadge">7 buckets</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="mcx-accordion-panel" id="intraday-panel">
+            <div class="curve-container"><canvas id="intradayChart"></canvas></div>
+            <div class="curve-legend" id="intradayLegend"></div>
+            <div class="mcx-meta-line" style="margin-top:8px;padding:8px;border:1px dashed var(--color-border)">
+              Session: 09:00–23:30 IST · Evening session (17:00–23:30) ≈ 67% of daily turnover · ★ PRIME = NYMEX open overlap
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================== MCX TAB: COMMODITIES ===================== -->
+    <!-- Ported from MCX/mcx-vercel/index.html (lines 2174-2233). -->
+    <section class="tab-content mcx-only" id="tab-commodities">
+      <div class="mcx-wrap">
+        <h2 style="margin-bottom:16px">Commodity-Level Analytics</h2>
+        <p id="commAsOf" class="mcx-meta-line" style="margin-bottom:16px">Loading…</p>
+
+        <div class="mcx-card" style="margin-bottom:20px">
+          <h3 style="margin-bottom:12px">Today's Commodity Lineup</h3>
+          <p id="commExchangeTO" class="mcx-meta-line" style="margin-bottom:8px"></p>
+          <div style="overflow-x:auto">
+            <table class="mcx-dtable" id="commTable">
+              <thead>
+                <tr>
+                  <th>Commodity</th><th>Sector</th><th class="num">Turnover (₹ Cr)</th><th class="num">% Share</th>
+                  <th>Signal</th><th class="num">Composite Z</th><th class="num">Turnover Z</th><th class="num">OI Z</th><th class="num">Volume Z</th>
+                </tr>
+              </thead>
+              <tbody id="commTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mcx-card" style="margin-bottom:20px">
+          <h3 style="margin-bottom:12px">Top Movers (1-Day Z-Score Change)</h3>
+          <div style="overflow-x:auto">
+            <table class="mcx-dtable" id="moversTable">
+              <thead>
+                <tr><th>Commodity</th><th>Sector</th><th class="num">Prev Z</th><th class="num">Curr Z</th><th class="num">Δ Z</th><th>Signal</th></tr>
+              </thead>
+              <tbody id="moversTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mcx-card" style="margin-bottom:20px">
+          <h3 style="margin-bottom:12px">Sector Rotation (60-Day Turnover Share)</h3>
+          <div style="position:relative;height:320px">
+            <canvas id="sectorRotationChart"></canvas>
+          </div>
+          <p class="mcx-meta-line" style="margin-top:6px">Shows shifting composition of exchange turnover by sector.</p>
+        </div>
+
+        <div class="mcx-card" style="margin-bottom:20px">
+          <h3 style="margin-bottom:12px">Commodity Momentum (60-Day Rolling)</h3>
+          <div style="overflow-x:auto">
+            <table class="mcx-dtable" id="momentumTable">
+              <thead>
+                <tr><th>Commodity</th><th>Sector</th><th class="num">Avg Z</th><th class="num">% Positive Days</th><th class="num">Latest Z</th><th>Signal</th></tr>
+              </thead>
+              <tbody id="momentumTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 </div>
 
 <script src="./app.js"></script>
+<script src="./mcx-predictor.js" defer></script>
+<script src="./mcx-commodities.js" defer></script>
 </body>
 </html>
