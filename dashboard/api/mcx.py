@@ -17,19 +17,26 @@ Cold-start delta is negligible (~10-50ms) and worth the deployment correctness.
 """
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-import json
+import json, os, sys, traceback
 
-from lib.mcx_handlers.refresh     import handler as _RefreshHandler
-from lib.mcx_handlers.history     import handler as _HistoryHandler
-from lib.mcx_handlers.price       import handler as _PriceHandler
-from lib.mcx_handlers.commodities import handler as _CommoditiesHandler
-
-_HANDLER_MAP = {
-    "refresh":     _RefreshHandler,
-    "history":     _HistoryHandler,
-    "price":       _PriceHandler,
-    "commodities": _CommoditiesHandler,
-}
+# Module-level imports so Vercel's Python tracer bundles lib/. Wrapped in
+# try/except so an import failure surfaces as a 500 with the traceback in the
+# body instead of an opaque FUNCTION_INVOCATION_FAILED.
+_IMPORT_ERROR = None
+_HANDLER_MAP = {}
+try:
+    from lib.mcx_handlers.refresh     import handler as _RefreshHandler
+    from lib.mcx_handlers.history     import handler as _HistoryHandler
+    from lib.mcx_handlers.price       import handler as _PriceHandler
+    from lib.mcx_handlers.commodities import handler as _CommoditiesHandler
+    _HANDLER_MAP = {
+        "refresh":     _RefreshHandler,
+        "history":     _HistoryHandler,
+        "price":       _PriceHandler,
+        "commodities": _CommoditiesHandler,
+    }
+except Exception:
+    _IMPORT_ERROR = traceback.format_exc()
 
 
 class handler(BaseHTTPRequestHandler):
@@ -63,10 +70,35 @@ class handler(BaseHTTPRequestHandler):
         # methods only use self.path / headers / rfile / wfile, all live on `self`.
         target(self)
 
+    def _maybe_report_import_error(self):
+        """If module-level imports failed, return a 500 with the traceback."""
+        if _IMPORT_ERROR is None:
+            return False
+        cwd = os.getcwd()
+        body = json.dumps({
+            "success": False,
+            "error": "Module import failed at function load",
+            "traceback": _IMPORT_ERROR,
+            "cwd": cwd,
+            "sys_path": sys.path,
+            "cwd_listing": sorted(os.listdir(cwd))[:50] if os.path.isdir(cwd) else None,
+            "task_listing": sorted(os.listdir("/var/task"))[:50] if os.path.isdir("/var/task") else None,
+        }).encode("utf-8")
+        self.send_response(500)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+        return True
+
     def do_GET(self):
+        if self._maybe_report_import_error():
+            return
         self._delegate("GET")
 
     def do_POST(self):
+        if self._maybe_report_import_error():
+            return
         self._delegate("POST")
 
     def do_OPTIONS(self):
