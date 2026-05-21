@@ -10,7 +10,7 @@
  * Returns: { nse: {...}, bse: {...}, mcx: {...}, fetched_at }
  */
 
-const GITHUB_RAW = 'https://raw.githubusercontent.com/Research-Tusk/exchange-pipeline/main/dashboard/data';
+const GITHUB_RAW = 'https://raw.githubusercontent.com/sucaanalytics-max/TuskCapMkts/main/dashboard/data';
 
 // Take rates (both sides of transaction)
 const TR_FUT_NSE  = 0.00173 / 100 * 2;

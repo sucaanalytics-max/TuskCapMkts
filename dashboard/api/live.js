@@ -17,7 +17,7 @@
  *          GET /api/live?exchange=bse&file=share (bse_share_analysis.json)
  */
 
-const REPO_RAW = 'https://raw.githubusercontent.com/Research-Tusk/exchange-pipeline/main/dashboard/data';
+const REPO_RAW = 'https://raw.githubusercontent.com/sucaanalytics-max/TuskCapMkts/main/dashboard/data';
 
 const VALID_EXCHANGES = ['nse', 'bse', 'mcx'];
 
