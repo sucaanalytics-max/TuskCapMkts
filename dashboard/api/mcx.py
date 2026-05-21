@@ -12,24 +12,35 @@ Resources:
   price        — share price + analytics
   commodities  — per-commodity breakdown
 
-Top-level imports so Vercel's Python tracer bundles lib/. Verified at runtime
-in /var/task/{api,lib,...} with the minimal-handler diagnostic at commit 9c76f15.
+Imports are deferred to first request (cached in `_HANDLER_MAP`) because doing
+them at module-load time triggered FUNCTION_INVOCATION_FAILED on Vercel —
+likely a stale-bundle artifact from earlier commits. The minimal-handler probe
+at commit 9c76f15 verified all four modules import cleanly at request time
+with lib/ correctly bundled into /var/task/.
 """
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import json
 
-from lib.mcx_handlers.refresh     import handler as _RefreshHandler
-from lib.mcx_handlers.history     import handler as _HistoryHandler
-from lib.mcx_handlers.price       import handler as _PriceHandler
-from lib.mcx_handlers.commodities import handler as _CommoditiesHandler
+_HANDLER_MAP = {}
 
-_HANDLER_MAP = {
-    "refresh":     _RefreshHandler,
-    "history":     _HistoryHandler,
-    "price":       _PriceHandler,
-    "commodities": _CommoditiesHandler,
-}
+
+def _get_handler(resource):
+    cached = _HANDLER_MAP.get(resource)
+    if cached is not None:
+        return cached
+    if resource == "refresh":
+        from lib.mcx_handlers.refresh import handler as inner
+    elif resource == "history":
+        from lib.mcx_handlers.history import handler as inner
+    elif resource == "price":
+        from lib.mcx_handlers.price import handler as inner
+    elif resource == "commodities":
+        from lib.mcx_handlers.commodities import handler as inner
+    else:
+        return None
+    _HANDLER_MAP[resource] = inner
+    return inner
 
 
 class handler(BaseHTTPRequestHandler):
@@ -45,13 +56,13 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _resolve_handler(self):
+    def _resolve(self):
         qs = parse_qs(urlparse(self.path).query)
         resource = (qs.get("resource") or ["refresh"])[0].lower()
-        return _HANDLER_MAP.get(resource)
+        return _get_handler(resource)
 
     def _delegate(self, method):
-        inner_cls = self._resolve_handler()
+        inner_cls = self._resolve()
         if inner_cls is None:
             self._send_error(400, "Invalid resource (expected: refresh|history|price|commodities)")
             return
@@ -70,7 +81,7 @@ class handler(BaseHTTPRequestHandler):
         self._delegate("POST")
 
     def do_OPTIONS(self):
-        inner_cls = self._resolve_handler()
+        inner_cls = self._resolve()
         if inner_cls and getattr(inner_cls, "do_OPTIONS", None):
             inner_cls.do_OPTIONS(self)
             return
