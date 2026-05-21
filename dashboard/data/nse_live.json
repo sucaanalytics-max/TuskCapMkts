@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-05-21T11:56:21",
+  "updated_at": "2026-05-21T14:03:45",
   "market_status": {
     "marketState": [
       {
@@ -34,13 +34,13 @@
       },
       {
         "market": "Debt",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "21-May-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "currencyfuture",
@@ -87,11 +87,11 @@
       "EXPIRYDATE": "26-May-2026",
       "OPTIONTYPE": "-",
       "STRIKEPRICE": 0,
-      "LASTPRICE": 23506.5,
-      "DAYCHANGE": -83,
-      "PERCHANGE": -0.35,
-      "CONTRACTSTRADED": 125516,
-      "TIMESTMP": "21-May-2026 17:23"
+      "LASTPRICE": 23517,
+      "DAYCHANGE": -72.5,
+      "PERCHANGE": -0.31,
+      "CONTRACTSTRADED": 127448,
+      "TIMESTMP": "21-May-2026 19:30"
     }
   },
   "revenue": {
@@ -388,17 +388,17 @@
       "revenue": {
         "has_data": true,
         "trade_date": "21-May-2026",
-        "futures_turnover": 0.0,
-        "options_premium": 0.0,
+        "futures_turnover": 344732.38,
+        "options_premium": 44326.4,
         "cash_traded_value": 121251.1,
-        "index_futures_turnover": 0.0,
-        "stock_futures_turnover": 0.0,
-        "index_options_premium": 0.0,
-        "stock_options_premium": 0.0,
-        "futures_revenue": 0.0,
-        "options_revenue": 0.0,
+        "index_futures_turnover": 28902.41,
+        "stock_futures_turnover": 315829.97,
+        "index_options_premium": 36937.23,
+        "stock_options_premium": 7389.17,
+        "futures_revenue": 11.9277,
+        "options_revenue": 31.0551,
         "cash_revenue": 7.2023,
-        "total_revenue": 7.2023,
+        "total_revenue": 50.1851,
         "source": "historical"
       }
     }
