@@ -201,7 +201,7 @@ html {
 body,
 .dashboard,
 .sidebar,
-.header,
+.crumb,
 .main,
 .chart-panel,
 .kpi-card,
@@ -234,8 +234,8 @@ html, body {
 .dashboard {
   display: grid;
   grid-template-columns: 220px 1fr;
-  /* KPI strip is no longer in the topbar — it lives inside <main>. */
-  grid-template-rows: 56px 1fr;
+  /* Slim 32px breadcrumb (was 56px dark-red header). KPI strip lives in <main>. */
+  grid-template-rows: 32px 1fr;
   height: 100dvh;
   background: var(--color-bg);
 }
@@ -362,42 +362,50 @@ html, body {
    HEADER
    ========================= */
 
-.header {
+/* Slim breadcrumb (replaces the old 56px dark-red header bar) */
+.crumb {
   grid-column: 2;
   grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-5);
+  padding: 0 var(--space-4);
   background: var(--color-surface);
-  border-bottom: 3px solid var(--color-primary);
-  z-index: 10;
-  box-shadow: var(--shadow-sm);
-}
-
-.header-title {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--kpi-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  color: var(--color-text-muted);
   letter-spacing: 0.03em;
-  text-transform: uppercase;
+  z-index: 10;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
+.crumb-left, .crumb-right { display: flex; align-items: center; gap: 10px; }
 
-.header-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  font-size: var(--text-xs);
+.crumb-trail { display: flex; align-items: center; gap: 6px; }
+.crumb-root      { color: var(--color-text-muted); }
+.crumb-sep       { color: var(--color-text-faint, #c4c0b8); }
+.crumb-exchange  { font-weight: 700; color: var(--color-primary); }
+.crumb-tab       { font-weight: 600; color: var(--color-text); }
+
+.crumb-meta {
+  font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
 }
 
-.header-meta .live-dot {
+.mobile-nav-toggle {
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: none;
+}
+@media (max-width: 1024px) {
+  .mobile-nav-toggle { display: inline-flex; }
+}
+
+/* Legacy live-dot kept for any other usages in the codebase */
+.live-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -569,40 +577,47 @@ html, body {
 
 .kpi-table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   font-family: var(--kpi-mono);
-  font-size: 12px;
   background: var(--color-surface, #fff);
   border: 1px solid var(--kpi-border-heavy);
+  /* Fixed layout + equal column widths so columns don't drift with content. */
   table-layout: fixed;
 }
 
+/* 7 cols: Exchange 76px fixed, the rest equally split */
+.kpi-table colgroup col.kpi-col-exchange { width: 76px; }
+.kpi-table colgroup col.kpi-col-data     { width: auto; }
+
 .kpi-table th,
 .kpi-table td {
-  padding: 5px 10px;
-  height: 24px;
+  padding: 6px 10px;
   border-right: 1px solid var(--kpi-border);
   border-bottom: 1px solid var(--kpi-border);
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .kpi-table th:last-child,
 .kpi-table td:last-child { border-right: 0; }
 
+/* Column header row */
 .kpi-table thead th {
   background: var(--kpi-header-bg);
+  font-family: var(--font-body, system-ui);
   font-weight: 700;
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.10em;
   color: var(--color-text-muted, #6b6560);
   text-align: right;
   border-bottom: 2px solid var(--kpi-border-heavy);
+  padding: 5px 10px;
 }
 
 .kpi-table thead th.kpi-corner {
   text-align: left;
-  width: 11%;
+  border-right: 2px solid var(--kpi-border-heavy);
 }
 
 .kpi-table thead th.kpi-todayhead {
@@ -611,52 +626,92 @@ html, body {
   border-right: 2px solid var(--kpi-border-heavy);
 }
 
+/* Row banding + hover */
 .kpi-table tbody tr:nth-child(even) { background: var(--kpi-band); }
 .kpi-table tbody tr:hover           { background: color-mix(in srgb, var(--color-primary, #0958d9) 6%, transparent); }
 
+/* Exchange label column */
 .kpi-table th.kpi-exchange {
   text-align: left;
-  font-weight: 700;
+  vertical-align: middle;
   font-family: var(--font-body, system-ui);
+  font-weight: 700;
+  font-size: 13px;
   letter-spacing: 0.04em;
   color: var(--color-text, #1a1a1a);
   background: var(--kpi-header-bg);
   border-right: 2px solid var(--kpi-border-heavy);
 }
 
-.kpi-table .kpi-num {
+/* Numeric cell shell */
+.kpi-table .kpi-cell {
   text-align: right;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
   position: relative;
-  color: var(--color-text, #1a1a1a);
 }
 
-.kpi-table .kpi-num--today {
+/* Today column gets a slight highlight + heavy right border */
+.kpi-table .kpi-today {
   background: var(--kpi-today-col-bg);
   border-right: 2px solid var(--kpi-border-heavy);
-  font-weight: 700;
 }
 
-.kpi-celldate {
+/* Two-line cell content (value on top, date below). Scoped to kpi-table so it
+   does not collide with the older kpi-card .kpi-value at line ~748. */
+.kpi-table .kpi-value {
+  display: block;
+  font-family: var(--kpi-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--color-text, #1a1a1a);
+  white-space: nowrap;
+}
+
+.kpi-table .kpi-value--strong {
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.kpi-table .kpi-date {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--kpi-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: #8a857d;        /* slightly darker than text-muted for visibility */
+  text-align: right;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .kpi-table .kpi-date { color: #999; }
+
+.kpi-table .kpi-proj {
   display: block;
   margin-top: 1px;
+  font-family: var(--kpi-mono);
   font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 0.03em;
-  color: var(--color-text-muted, #6b6560);
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  color: var(--color-text-faint, #aaa);
   text-align: right;
 }
+
+/* Δ vs MA45 column */
+.kpi-table .kpi-delta { font-weight: 700; }
+.kpi-table .kpi-up    { color: var(--kpi-green); }
+.kpi-table .kpi-up    .kpi-value { color: var(--kpi-green); }
+.kpi-table .kpi-down  { color: var(--kpi-red); }
+.kpi-table .kpi-down  .kpi-value { color: var(--kpi-red); }
 
 .kpi-glyph {
   display: inline-block;
   margin-right: 4px;
-  font-size: 10px;
-  width: 9px;
+  font-size: 11px;
+  width: 10px;
 }
-
-.kpi-up   { color: var(--kpi-green); }
-.kpi-down { color: var(--kpi-red); }
 
 .kpi-live-dot {
   display: inline-block;
@@ -685,10 +740,24 @@ html, body {
   letter-spacing: 0.04em;
 }
 
-@media (max-width: 760px) {
-  .kpi-table { font-size: 11px; }
-  .kpi-table th, .kpi-table td { padding: 4px 6px; }
-  .kpi-celldate { display: none; }
+@media (max-width: 1180px) {
+  .kpi-table .kpi-value         { font-size: 15px; }
+  .kpi-table .kpi-value--strong { font-size: 16px; }
+  .kpi-table th, .kpi-table td  { padding: 5px 8px; }
+}
+
+@media (max-width: 920px) {
+  .kpi-table .kpi-value         { font-size: 13.5px; }
+  .kpi-table .kpi-value--strong { font-size: 14.5px; }
+  .kpi-table .kpi-date          { font-size: 9.5px; }
+  .kpi-table .kpi-proj          { display: none; }
+  .kpi-table th, .kpi-table td  { padding: 4px 6px; }
+}
+
+@media (max-width: 720px) {
+  .kpi-table thead th           { font-size: 9px; letter-spacing: 0.04em; }
+  .kpi-table .kpi-value         { font-size: 12.5px; }
+  .kpi-table .kpi-date          { font-size: 9px; }
 }
 
 /* =========================
@@ -1853,7 +1922,7 @@ tr.xl-r-cur { background: rgba(37, 99, 235, 0.03); }
     display: none;
   }
 
-  .header {
+  .crumb {
     grid-column: 1;
   }
 
@@ -2326,30 +2395,14 @@ span.pr-neg {
 
 
 @media (max-width: 640px) {
-  /* ── Header ── */
-  .header {
-    padding: 0 10px;
-  }
-
-  .header-right {
-    gap: 6px;
-    min-width: 0;
-  }
-
-  /* Live revenue chips in header take too much space on phones — live tab shows the same info */
-  #header-live-rev {
-    display: none !important;
-  }
-
-  /* Quarter and separator — redundant on small screen */
-  #currentQuarterSpan,
-  #currentQuarterSpan + span {
-    display: none;
-  }
-
-  .header-meta {
-    gap: 4px;
+  /* ── Breadcrumb ── */
+  .crumb {
+    padding: 0 8px;
     font-size: 10px;
+  }
+
+  .crumb-meta {
+    display: none;
   }
 
   /* ── Main padding ── */

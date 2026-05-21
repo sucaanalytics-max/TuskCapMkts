@@ -361,8 +361,10 @@ async function switchExchange(exchange) {
   Object.values(charts).forEach(c => { if (c && c.destroy) c.destroy(); });
   Object.keys(charts).forEach(k => delete charts[k]);
   currentExchange = exchange;
-  // Update logo
+  // Update logo + breadcrumb
   document.getElementById('logoText').textContent = exchange.toUpperCase() + ' Analytics';
+  const crumbEx = document.getElementById('crumbExchange');
+  if (crumbEx) crumbEx.textContent = exchange.toUpperCase();
   // Update sidebar nav
   buildSidebarNav(exchange);
   // Show/hide exchange-specific content sections
@@ -452,21 +454,19 @@ function updateHeaderInfo() {
 }
 
 // ========================
-// KPI STRIP (Excel-grid)
+// KPI STRIP (Excel-grid, v2 — weekday dates + full-day projection)
 //
-// Renders the 3×7 KPI strip near the top of every tab:
-//
-//   EXCHANGE │ TODAY     │ T-1   │ T-2   │ T-3   │ MA45  │ Δ MA45
-//   ─────────┼───────────┼───────┼───────┼───────┼───────┼─────────
-//      NSE   │ 28.80 ▲   │ 26.45 │ 27.10 │ 25.80 │ 26.42 │ +9.0%
-//      BSE   │ ...
-//      MCX   │ ...
-//
-// Today = live revenue (NSE/BSE direct fetch, MCX from Supabase relay).
-// T-1/T-2/T-3 = last 3 EOD days from {exchange}_dashboard_data.json daily array
-// (excluding today's date if present).
-// MA45 = trailing 45-day mean of total_rev from the same array.
-// Δ MA45 = (today / MA45 − 1) × 100  — Excel green if positive, red if negative.
+// Renders 3 rows (NSE/BSE/MCX) × 7 columns: Exchange, Today, T-1, T-2, T-3,
+// MA45, Δ vs MA45. Each cell shows the value (right-aligned, tabular-nums)
+// over a small "Wed 21 May" date line. The Today cell auto-projects to
+// full-day when session is open so the Δ vs MA45 comparison is apples-to-
+// apples:
+//   NSE/BSE: client-side linear projection from IST elapsed-time fraction
+//            (session 09:15-15:30 = 375 min)
+//   MCX:     /api/revenue already returns proj_total_rev from the relay's
+//            calibrated 7-bucket intraday curve, so no client-side work
+// When the session is outside trading hours, Today shows the realized value
+// as-is and Δ vs MA45 uses that (full-day vs full-day, fair).
 // ========================
 
 const KPI_EXCHANGES = ['nse', 'bse', 'mcx'];
@@ -548,49 +548,136 @@ async function _loadLiveRevenues() {
   return { nse, bse, mcx };
 }
 
-// ── Render ─────────────────────────────────────────────────────────────────
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// ── Date formatting ───────────────────────────────────────────────────────
+const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-function _shortDate(dateStr) {
-  if (!dateStr) return '';
+function _parseDate(dateStr) {
+  if (!dateStr) return null;
   let d;
   if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
     d = new Date(dateStr.slice(0, 10) + 'T00:00:00');
   } else if (/^\d{2}\/\d{2}\/\d{2}$/.test(dateStr)) {
     const [dd, mm, yy] = dateStr.split('/');
     d = new Date('20' + yy + '-' + mm + '-' + dd + 'T00:00:00');
-  } else {
-    return dateStr;
-  }
-  if (isNaN(d.getTime())) return dateStr;
-  return d.getDate() + ' ' + MONTHS[d.getMonth()];
+  } else { return null; }
+  return isNaN(d.getTime()) ? null : d;
 }
 
+function _weekdayDate(dateStr) {
+  const d = _parseDate(dateStr);
+  if (!d) return dateStr || '';
+  return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+// ── Session detection + Today projection ──────────────────────────────────
+//
+// Returns { value, projected, elapsedPct, sessionOpen } for the given
+// exchange's live (mid-session realised) revenue. MCX is pre-projected by
+// the relay; NSE/BSE are projected client-side via linear extrapolation
+// over the trading session.
+const SESSIONS = {
+  nse: { start: 9 * 60 + 15, end: 15 * 60 + 30 },   // 09:15 – 15:30 IST
+  bse: { start: 9 * 60 + 15, end: 15 * 60 + 30 },
+  mcx: { start: 9 * 60,      end: 23 * 60 + 30 },   // 09:00 – 23:30 IST
+};
+
+function _istNowMinutes() {
+  const now = new Date();
+  return (now.getUTCHours() * 60 + now.getUTCMinutes()) + 330;  // UTC + 5:30
+}
+
+function _isWeekdayIST() {
+  const now = new Date();
+  const istHrs = (now.getUTCHours() + 5.5) % 24;
+  const dayShift = (now.getUTCHours() + 5.5) >= 24 ? 1 : 0;
+  const day = (now.getUTCDay() + dayShift) % 7;
+  return day >= 1 && day <= 5;
+}
+
+function _projectToday(exchange, live) {
+  if (!live || !live.has_data || live.total_revenue == null) {
+    return { value: null, projected: false, elapsedPct: 0, sessionOpen: false };
+  }
+  const realized = Number(live.total_revenue);
+
+  // MCX: /api/revenue already passes through proj_total_rev from the relay's
+  // calibrated curve. Don't re-project — just label as projected when source
+  // is the live relay (not historical).
+  if (exchange === 'mcx') {
+    const isLive = live.source && live.source !== 'historical';
+    return { value: realized, projected: isLive, elapsedPct: null, sessionOpen: isLive };
+  }
+
+  // NSE/BSE: project realized → full-day using IST elapsed fraction.
+  const sess = SESSIONS[exchange];
+  if (!sess) return { value: realized, projected: false, elapsedPct: 0, sessionOpen: false };
+  const ist = _istNowMinutes();
+  const sessionOpen = _isWeekdayIST() && ist >= sess.start && ist < sess.end;
+  if (!sessionOpen) {
+    // Pre-market or post-close — realized value IS the day's number
+    return { value: realized, projected: false, elapsedPct: 100, sessionOpen: false };
+  }
+  const elapsed = ist - sess.start;
+  const total   = sess.end - sess.start;
+  const frac    = elapsed / total;
+  // Below 5% elapsed, projection is too noisy to trust — show realised as-is
+  if (frac < 0.05) {
+    return { value: realized, projected: false, elapsedPct: frac * 100, sessionOpen: true };
+  }
+  return { value: realized / frac, projected: true, elapsedPct: frac * 100, sessionOpen: true };
+}
+
+// ── Row rendering ─────────────────────────────────────────────────────────
 function _renderRow(exchange, live, trail, ma45) {
-  const today = live && live.has_data ? Number(live.total_revenue) : null;
-  const todayDate = live ? live.trade_date : null;
-  const isLive = live && live.source && live.source !== 'historical';
+  const proj = _projectToday(exchange, live);
+  const todayValue = proj.value;
+  const todayDate  = live ? live.trade_date : null;
+  const isLive     = live && live.source && live.source !== 'historical';
 
   function cell(idx) {
     const r = trail[idx];
-    if (!r) return '<td class="kpi-num">—<span class="kpi-celldate">—</span></td>';
-    return `<td class="kpi-num">${_fmtCr(r.total_rev)}<span class="kpi-celldate">${_shortDate(r.date)}</span></td>`;
+    if (!r) return '<td class="kpi-num kpi-cell">—</td>';
+    return (
+      '<td class="kpi-num kpi-cell">' +
+        `<span class="kpi-value">${_fmtCr(r.total_rev)}</span>` +
+        `<span class="kpi-date">${_weekdayDate(r.date)}</span>` +
+      '</td>'
+    );
   }
 
-  const todayCell = today != null
-    ? `<td class="kpi-num kpi-num--today">${_fmtCr(today)}<span class="kpi-celldate">${_shortDate(todayDate)}${isLive ? '<span class="kpi-live-dot" title="LIVE"></span>' : ''}</span></td>`
-    : `<td class="kpi-num kpi-num--today">—</td>`;
+  let todayCell;
+  if (todayValue == null) {
+    todayCell = '<td class="kpi-num kpi-cell kpi-today">—</td>';
+  } else {
+    const dot = isLive ? '<span class="kpi-live-dot" title="LIVE"></span>' : '';
+    const projTag = proj.projected
+      ? `<span class="kpi-proj">est · ${proj.elapsedPct != null ? proj.elapsedPct.toFixed(0) + '% elapsed' : 'session live'}</span>`
+      : '';
+    todayCell = (
+      '<td class="kpi-num kpi-cell kpi-today">' +
+        `<span class="kpi-value kpi-value--strong">${_fmtCr(todayValue)}${dot}</span>` +
+        `<span class="kpi-date">${_weekdayDate(todayDate)}</span>` +
+        projTag +
+      '</td>'
+    );
+  }
 
   const ma45Cell = ma45 != null
-    ? `<td class="kpi-num">${_fmtCr(ma45)}</td>`
-    : `<td class="kpi-num">—</td>`;
+    ? `<td class="kpi-num kpi-cell"><span class="kpi-value">${_fmtCr(ma45)}</span><span class="kpi-date">trailing 45d</span></td>`
+    : `<td class="kpi-num kpi-cell">—</td>`;
 
-  let deltaCell = '<td class="kpi-num">—</td>';
-  if (today != null && ma45 != null && ma45 !== 0) {
-    const pct = (today / ma45 - 1) * 100;
-    const cls = pct >= 0 ? 'kpi-up' : 'kpi-down';
+  let deltaCell = '<td class="kpi-num kpi-cell">—</td>';
+  if (todayValue != null && ma45 != null && ma45 !== 0) {
+    const pct   = (todayValue / ma45 - 1) * 100;
+    const cls   = pct >= 0 ? 'kpi-up' : 'kpi-down';
     const glyph = pct >= 0 ? '▲' : '▼';
-    deltaCell = `<td class="kpi-num ${cls}"><span class="kpi-glyph">${glyph}</span>${_fmtPct(pct)}</td>`;
+    deltaCell = (
+      `<td class="kpi-num kpi-cell kpi-delta ${cls}">` +
+        `<span class="kpi-value kpi-value--strong"><span class="kpi-glyph">${glyph}</span>${_fmtPct(pct)}</span>` +
+        `<span class="kpi-date">${proj.projected ? 'projected' : 'final'}</span>` +
+      '</td>'
+    );
   }
 
   return (
@@ -629,6 +716,15 @@ async function updateKPIStrip() {
 
   el.innerHTML =
     '<table class="kpi-table">' +
+      '<colgroup>' +
+        '<col class="kpi-col-exchange">' +
+        '<col class="kpi-col-data">' +
+        '<col class="kpi-col-data">' +
+        '<col class="kpi-col-data">' +
+        '<col class="kpi-col-data">' +
+        '<col class="kpi-col-data">' +
+        '<col class="kpi-col-data">' +
+      '</colgroup>' +
       '<thead>' +
         '<tr>' +
           '<th class="kpi-corner">Exchange</th>' +
@@ -648,7 +744,7 @@ async function updateKPIStrip() {
       '<tfoot>' +
         '<tr><td colspan="7" class="kpi-footnote">' +
           'Values in ₹ Cr · ' + (hasLive ? '<span class="kpi-live-dot"></span> LIVE · ' : 'EOD · ') +
-          'Updated ' + updatedAt + ' IST' +
+          'Today projected to full-day · Updated ' + updatedAt + ' IST' +
         '</td></tr>' +
       '</tfoot>' +
     '</table>';
