@@ -1,11 +1,13 @@
 /**
  * Vercel Serverless Function: /api/revenue
  *
- * Fetches today's live revenue directly from NSE and BSE APIs.
- * BSE: calls api.bseindia.com directly (standard headers, no TLS fingerprinting needed).
- * NSE: attempts session-bootstrapped fetch; falls back to GitHub-hosted nse_live.json.
+ * Fetches today's live revenue for NSE, BSE, and MCX.
+ *   BSE: calls api.bseindia.com directly (standard headers, no TLS fingerprinting).
+ *   NSE: session-bootstrapped fetch; falls back to GitHub-hosted nse_live.json.
+ *   MCX: reads latest mcx_snapshots row from MCX Supabase (cloud IPs blocked
+ *        by Akamai, so the local Mac relay is the only writer).
  *
- * Returns: { nse: { total_revenue, trade_date, has_data, source }, bse: {...}, fetched_at }
+ * Returns: { nse: {...}, bse: {...}, mcx: {...}, fetched_at }
  */
 
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Research-Tusk/exchange-pipeline/main/dashboard/data';
@@ -167,18 +169,56 @@ async function fetchGitHubFallback(exchange) {
   }
 }
 
+// ── MCX ──────────────────────────────────────────────────────────────────────
+//
+// MCX is asymmetric: cloud IPs are Akamai-blocked, so we can't fetch
+// directly. The local Mac relay writes mcx_snapshots to Supabase. Read latest.
+
+async function fetchMCXFromSupabase() {
+  const url = process.env.MCX_SUPABASE_URL;
+  const key = process.env.MCX_SUPABASE_KEY;
+  if (!url || !key) return null;
+  try {
+    const r = await fetch(
+      `${url}/rest/v1/mcx_snapshots?select=trading_date,proj_total_rev,total_rev_cr,captured_at&order=captured_at.desc&limit=1`,
+      {
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!r.ok) return null;
+    const rows = await r.json();
+    if (!rows.length) return null;
+    const s = rows[0];
+    const total = s.proj_total_rev ?? s.total_rev_cr ?? null;
+    if (total == null) return null;
+    return {
+      total_revenue: Math.round(total * 100) / 100,
+      trade_date: s.trading_date,
+      has_data: true,
+      source: 'mcx_relay',
+      captured_at: s.captured_at,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 module.exports = async function handler(req, res) {
-  const [nseSettled, bseSettled] = await Promise.allSettled([
+  const [nseSettled, bseSettled, mcxSettled] = await Promise.allSettled([
     fetchNSEDirect().catch(() => null),
     fetchBSEDirect().catch(() => null),
+    fetchMCXFromSupabase().catch(() => null),
   ]);
 
   let nse = nseSettled.status === 'fulfilled' ? nseSettled.value : null;
   let bse = bseSettled.status === 'fulfilled' ? bseSettled.value : null;
+  const mcx = mcxSettled.status === 'fulfilled' ? mcxSettled.value : null;
 
-  // Fall back to GitHub-hosted live JSON if direct fetch failed or has no data
+  // Fall back to GitHub-hosted live JSON if direct fetch failed or has no data.
+  // MCX has no GitHub fallback — relay is the sole writer.
   const [nseFallback, bseFallback] = await Promise.all([
     (!nse?.has_data) ? fetchGitHubFallback('nse').catch(() => null) : Promise.resolve(null),
     (!bse?.has_data) ? fetchGitHubFallback('bse').catch(() => null) : Promise.resolve(null),
@@ -189,5 +229,5 @@ module.exports = async function handler(req, res) {
 
   res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
   res.setHeader('Content-Type', 'application/json');
-  return res.status(200).json({ nse, bse, fetched_at: new Date().toISOString() });
+  return res.status(200).json({ nse, bse, mcx, fetched_at: new Date().toISOString() });
 };

@@ -20,7 +20,7 @@
       ]
     },
     {
-      "source": "/data/(nse|bse)_live.json",
+      "source": "/data/(nse|bse|mcx)_live.json",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
