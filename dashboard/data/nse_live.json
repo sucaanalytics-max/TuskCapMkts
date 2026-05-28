@@ -1,20 +1,20 @@
 {
-  "updated_at": "2026-05-27T14:24:19",
+  "updated_at": "2026-05-28T06:55:04",
   "market_status": {
     "marketState": [
       {
         "market": "Capital Market",
-        "marketStatus": "Closed",
+        "marketStatus": "Close",
         "tradeDate": "27-May-2026 15:30",
         "index": "NIFTY 50",
         "last": 23907.15,
         "variation": -6.549999999999272,
         "percentChange": -0.03,
-        "marketStatusMessage": "Normal Market has Closed"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "Currency",
-        "marketStatus": "Closed",
+        "marketStatus": "Close",
         "tradeDate": "27-May-2026",
         "index": "",
         "last": "",
@@ -25,16 +25,16 @@
       {
         "market": "Commodity",
         "marketStatus": "Open",
-        "tradeDate": "27-May-2026",
+        "tradeDate": "28-May-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "Debt",
-        "marketStatus": "Closed",
+        "marketStatus": "Close",
         "tradeDate": "27-May-2026",
         "index": "",
         "last": "",
@@ -44,7 +44,7 @@
       },
       {
         "market": "currencyfuture",
-        "marketStatus": "Closed",
+        "marketStatus": "Close",
         "tradeDate": "27-May-2026",
         "index": "",
         "last": "98.4800",
@@ -53,8 +53,8 @@
         "marketStatusMessage": "Market is Closed",
         "expiryDate": "29-May-2026",
         "underlying": "USDINR",
-        "updated_time": "27-May-2026 11:44",
-        "tradeDateFormatted": "27-May-2026 11:44",
+        "updated_time": "27-May-2026 17:00",
+        "tradeDateFormatted": "27-May-2026 17:00",
         "slickclass": "slick-item"
       }
     ],
@@ -67,30 +67,17 @@
       "marketCapinLACCRRupeesFormatted": "471.12",
       "underlying": "Market Cap"
     },
-    "indicativenifty50": {
-      "change": -6.56,
-      "closingValue": 23907.15,
-      "dateTime": "27-May-2026 15:30",
-      "finalClosingValue": 23907.15,
-      "indexLast": null,
-      "indexName": "NIFTY 50",
-      "indexPercChange": null,
-      "indexTimeVal": null,
-      "indicativeTime": null,
-      "perChange": -0.03,
-      "status": "CLOSE"
-    },
     "giftnifty": {
-      "CONTRACTSTRADED": 46075,
-      "DAYCHANGE": -35,
+      "CONTRACTSTRADED": 12332,
+      "DAYCHANGE": -205.5,
       "EXPIRYDATE": "30-Jun-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 23939.5,
+      "LASTPRICE": 23639.5,
       "OPTIONTYPE": "-",
-      "PERCHANGE": -0.15,
+      "PERCHANGE": -0.86,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "27-May-2026 19:50",
+      "TIMESTMP": "28-May-2026 12:22",
       "id": "0/NIFTYFUTIDX30-Jun-2026--"
     }
   },
