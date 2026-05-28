@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-05-28T10:55:36",
+  "updated_at": "2026-05-28T14:34:34",
   "market_status": {
     "marketState": [
       {
@@ -30,7 +30,7 @@
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Closed"
+        "marketStatusMessage": "Market is Open"
       },
       {
         "market": "Debt",
@@ -68,36 +68,36 @@
       "underlying": "Market Cap"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 17227,
-      "DAYCHANGE": -3.5,
+      "CONTRACTSTRADED": 22030,
+      "DAYCHANGE": 109,
       "EXPIRYDATE": "30-Jun-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 23655,
+      "LASTPRICE": 23767.5,
       "OPTIONTYPE": "-",
-      "PERCHANGE": -0.01,
+      "PERCHANGE": 0.46,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "28-May-2026 16:22",
+      "TIMESTMP": "28-May-2026 20:00",
       "id": "0/NIFTYFUTIDX30-Jun-2026--"
     }
   },
   "revenue": {
-    "trade_date": "2026-05-27",
-    "index_futures_turnover": 12727.97,
-    "stock_futures_turnover": 76743.98,
-    "futures_turnover": 89471.95,
-    "index_options_premium": 27131.44,
-    "stock_options_premium": 7502.35,
-    "options_premium": 34633.79,
-    "cash_traded_value": 135606.03,
+    "trade_date": "2026-05-28",
+    "index_futures_turnover": 0.0,
+    "stock_futures_turnover": 0.0,
+    "futures_turnover": 0.0,
+    "index_options_premium": 0.0,
+    "stock_options_premium": 0.0,
+    "options_premium": 0.0,
+    "cash_traded_value": 0.0,
     "take_rate_futures": 3.46e-05,
     "take_rate_options": 0.0007006,
     "take_rate_cash": 5.94e-05,
-    "futures_revenue": 3.0957,
-    "options_revenue": 24.2644,
-    "cash_revenue": 8.055,
-    "total_revenue": 35.4152,
-    "has_data": true,
+    "futures_revenue": 0.0,
+    "options_revenue": 0.0,
+    "cash_revenue": 0.0,
+    "total_revenue": 0.0,
+    "has_data": false,
     "source": "live"
   },
   "history": [
@@ -346,28 +346,6 @@
         "cash_revenue": 6.8028,
         "total_revenue": 47.09,
         "source": "historical"
-      }
-    },
-    {
-      "timestamp": "2026-05-27",
-      "revenue": {
-        "trade_date": "2026-05-27",
-        "index_futures_turnover": 12727.97,
-        "stock_futures_turnover": 76743.98,
-        "futures_turnover": 89471.95,
-        "index_options_premium": 27131.44,
-        "stock_options_premium": 7502.35,
-        "options_premium": 34633.79,
-        "cash_traded_value": 135606.03,
-        "take_rate_futures": 3.46e-05,
-        "take_rate_options": 0.0007006,
-        "take_rate_cash": 5.94e-05,
-        "futures_revenue": 3.0957,
-        "options_revenue": 24.2644,
-        "cash_revenue": 8.055,
-        "total_revenue": 35.4152,
-        "has_data": true,
-        "source": "live"
       }
     },
     {
