@@ -1,20 +1,20 @@
 {
-  "date": "2026-05-20",
-  "weekday": 2,
-  "weekday_name": "Wednesday",
-  "day_type": "pre_expiry",
+  "date": "2026-06-01",
+  "weekday": 0,
+  "weekday_name": "Monday",
+  "day_type": "normal",
   "snapshots": [
     {
-      "hour_label": "15:30",
-      "captured_ist": "2026-05-20T15:32:22",
-      "elapsed_minutes": 375,
-      "total_revenue": 28.18,
-      "cash_revenue": 0.68,
-      "options_revenue": 27.5,
+      "hour_label": "14:00",
+      "captured_ist": "2026-06-01T14:04:54",
+      "elapsed_minutes": 285,
+      "total_revenue": 6.55,
+      "cash_revenue": 0.53,
+      "options_revenue": 6.01,
       "futures_revenue": 0.0,
       "has_data": true,
-      "predicted_eod": 28.18,
-      "pred_method": "historical/overall"
+      "predicted_eod": 8.62,
+      "pred_method": "linear"
     }
   ]
 }
