@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-02T11:49:13",
+  "updated_at": "2026-06-02T14:47:52",
   "market_status": {
     "marketState": [
       {
@@ -34,13 +34,13 @@
       },
       {
         "market": "Debt",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "02-Jun-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "currencyfuture",
@@ -53,8 +53,8 @@
         "marketStatusMessage": "Market is Closed",
         "expiryDate": "05-Jun-2026",
         "underlying": "USDINR",
-        "updated_time": "02-Jun-2026 11:50",
-        "tradeDateFormatted": "02-Jun-2026 11:50",
+        "updated_time": "02-Jun-2026 17:00",
+        "tradeDateFormatted": "02-Jun-2026 17:00",
         "slickclass": "slick-item"
       }
     ],
@@ -81,16 +81,16 @@
       "status": "CLOSE"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 64891,
-      "DAYCHANGE": -34.5,
+      "CONTRACTSTRADED": 69606,
+      "DAYCHANGE": -29.5,
       "EXPIRYDATE": "30-Jun-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 23545,
+      "LASTPRICE": 23550,
       "OPTIONTYPE": "-",
-      "PERCHANGE": -0.15,
+      "PERCHANGE": -0.13,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "02-Jun-2026 17:17",
+      "TIMESTMP": "02-Jun-2026 20:14",
       "id": "1/NIFTYFUTIDX30-Jun-2026--"
     }
   },
@@ -138,17 +138,17 @@
       "revenue": {
         "has_data": true,
         "trade_date": "02-Jun-2026",
-        "futures_turnover": 0.0,
-        "options_premium": 0.0,
+        "futures_turnover": 102840.99,
+        "options_premium": 99232.58,
         "cash_traded_value": 143327.01,
-        "index_futures_turnover": 0.0,
-        "stock_futures_turnover": 0.0,
-        "index_options_premium": 0.0,
-        "stock_options_premium": 0.0,
-        "futures_revenue": 0.0,
-        "options_revenue": 0.0,
+        "index_futures_turnover": 21996.91,
+        "stock_futures_turnover": 80844.08,
+        "index_options_premium": 92357.17,
+        "stock_options_premium": 6875.41,
+        "futures_revenue": 3.5583,
+        "options_revenue": 69.5223,
         "cash_revenue": 8.5136,
-        "total_revenue": 8.5136,
+        "total_revenue": 81.5943,
         "source": "historical"
       }
     },
