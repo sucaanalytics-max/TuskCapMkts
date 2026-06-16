@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-16T13:19:10",
+  "updated_at": "2026-06-16T15:50:26",
   "market_status": {
     "marketState": [
       {
@@ -81,17 +81,17 @@
       "status": "CLOSE"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 47947,
-      "DAYCHANGE": 33,
+      "CONTRACTSTRADED": 51261,
+      "DAYCHANGE": 10.5,
       "EXPIRYDATE": "30-Jun-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 24027,
+      "LASTPRICE": 24004.5,
       "OPTIONTYPE": "-",
-      "PERCHANGE": 0.14,
+      "PERCHANGE": 0.04,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "16-Jun-2026 18:47",
-      "id": "0/NIFTYFUTIDX30-Jun-2026--"
+      "TIMESTMP": "16-Jun-2026 21:18",
+      "id": "1/NIFTYFUTIDX30-Jun-2026--"
     }
   },
   "revenue": {
@@ -328,17 +328,17 @@
       "revenue": {
         "has_data": true,
         "trade_date": "16-Jun-2026",
-        "futures_turnover": 0.0,
-        "options_premium": 0.0,
+        "futures_turnover": 73514.93,
+        "options_premium": 66910.08,
         "cash_traded_value": 119619.41,
-        "index_futures_turnover": 0.0,
-        "stock_futures_turnover": 0.0,
-        "index_options_premium": 0.0,
-        "stock_options_premium": 0.0,
-        "futures_revenue": 0.0,
-        "options_revenue": 0.0,
+        "index_futures_turnover": 12142.67,
+        "stock_futures_turnover": 61372.26,
+        "index_options_premium": 60543.42,
+        "stock_options_premium": 6366.66,
+        "futures_revenue": 2.5436,
+        "options_revenue": 46.8772,
         "cash_revenue": 7.1054,
-        "total_revenue": 7.1054,
+        "total_revenue": 56.5262,
         "source": "historical"
       }
     },
