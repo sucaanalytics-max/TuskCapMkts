@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-26T06:55:13",
+  "updated_at": "2026-06-26T10:22:32",
   "market_status": {
     "marketState": [
       {
@@ -68,16 +68,16 @@
       "underlying": "Market Cap"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 26801,
-      "DAYCHANGE": -48.5,
+      "CONTRACTSTRADED": 44374,
+      "DAYCHANGE": -10.5,
       "EXPIRYDATE": "30-Jun-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 24033,
+      "LASTPRICE": 24071,
       "OPTIONTYPE": "-",
-      "PERCHANGE": -0.2,
+      "PERCHANGE": -0.04,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "26-Jun-2026 12:22",
+      "TIMESTMP": "26-Jun-2026 15:39",
       "id": "1/NIFTYFUTIDX30-Jun-2026--"
     }
   },
