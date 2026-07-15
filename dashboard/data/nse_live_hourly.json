@@ -15,6 +15,18 @@
       "has_data": true,
       "predicted_eod": 48.71,
       "pred_method": "linear"
+    },
+    {
+      "hour_label": "13:00",
+      "captured_ist": "2026-07-15T13:00:55",
+      "elapsed_minutes": 225,
+      "total_revenue": 24.94,
+      "cash_revenue": 4.45,
+      "options_revenue": 18.5,
+      "futures_revenue": 1.99,
+      "has_data": true,
+      "predicted_eod": 41.57,
+      "pred_method": "linear"
     }
   ]
 }
