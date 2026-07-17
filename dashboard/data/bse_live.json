@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-17T11:07:58",
+  "updated_at": "2026-07-17T12:12:52",
   "sensex": {
     "last": 78151.45,
     "change": 964.58,
@@ -14,21 +14,21 @@
   "market_stat": {
     "market_cap_cr": 48092210.6,
     "market_cap_usd_t": 4.99,
-    "turnover_cr": 9308.35,
+    "turnover_cr": 9312.2,
     "listed_companies": 5166,
-    "advances": 1722,
-    "declines": 2500,
-    "unchanged": 190
+    "advances": 1635,
+    "declines": 2588,
+    "unchanged": 189
   },
   "revenue": {
     "trade_date": "17/07/26",
-    "equity_turnover": 9387.37,
+    "equity_turnover": 9391.3,
     "derivatives_notional": 2903967.79,
     "options_premium": 11263.86,
-    "cash_revenue": 0.7041,
+    "cash_revenue": 0.7043,
     "options_revenue": 7.3215,
     "futures_revenue": 0.0,
-    "total_revenue": 8.0256,
+    "total_revenue": 8.0259,
     "has_data": true,
     "source": "live"
   }
