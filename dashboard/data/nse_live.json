@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-21T10:31:59",
+  "updated_at": "2026-07-21T12:21:02",
   "market_status": {
     "marketState": [
       {
@@ -14,13 +14,13 @@
       },
       {
         "market": "Currency",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "21-Jul-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "Commodity",
@@ -34,27 +34,27 @@
       },
       {
         "market": "Debt",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "21-Jul-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "currencyfuture",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "21-Jul-2026",
         "index": "",
-        "last": "96.2975",
+        "last": "96.3175",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open",
+        "marketStatusMessage": "Market is Closed",
         "expiryDate": "29-Jul-2026",
         "underlying": "USDINR",
-        "updated_time": "21-Jul-2026 16:02",
-        "tradeDateFormatted": "21-Jul-2026 16:02",
+        "updated_time": "21-Jul-2026 17:00",
+        "tradeDateFormatted": "21-Jul-2026 17:00",
         "slickclass": "slick-item"
       }
     ],
@@ -81,16 +81,16 @@
       "status": "CLOSE"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 47813,
-      "DAYCHANGE": 55,
+      "CONTRACTSTRADED": 48783,
+      "DAYCHANGE": -38,
       "EXPIRYDATE": "28-Jul-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 24169.5,
+      "LASTPRICE": 24131.5,
       "OPTIONTYPE": "-",
-      "PERCHANGE": 0.23,
+      "PERCHANGE": -0.16,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "21-Jul-2026 15:49",
+      "TIMESTMP": "21-Jul-2026 17:49",
       "id": "0/NIFTYFUTIDX28-Jul-2026--"
     }
   },
@@ -400,6 +400,25 @@
         "total_revenue": 53.4417,
         "has_data": true,
         "source": "live"
+      }
+    },
+    {
+      "timestamp": "21-Jul-2026",
+      "revenue": {
+        "has_data": true,
+        "trade_date": "21-Jul-2026",
+        "futures_turnover": 0.0,
+        "options_premium": 0.0,
+        "cash_traded_value": 113350.33,
+        "index_futures_turnover": 0.0,
+        "stock_futures_turnover": 0.0,
+        "index_options_premium": 0.0,
+        "stock_options_premium": 0.0,
+        "futures_revenue": 0.0,
+        "options_revenue": 0.0,
+        "cash_revenue": 6.733,
+        "total_revenue": 6.733,
+        "source": "historical"
       }
     }
   ]
