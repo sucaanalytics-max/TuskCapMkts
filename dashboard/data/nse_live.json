@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-29T10:58:25",
+  "updated_at": "2026-07-29T12:56:54",
   "market_status": {
     "marketState": [
       {
@@ -14,13 +14,13 @@
       },
       {
         "market": "Currency",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "29-Jul-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "Commodity",
@@ -34,13 +34,13 @@
       },
       {
         "market": "Debt",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "29-Jul-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "index": "NIFTY50 USD",
@@ -51,13 +51,13 @@
       },
       {
         "market": "currencyfuture",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "29-Jul-2026",
         "index": "",
         "last": "95.7025",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open",
+        "marketStatusMessage": "Market is Closed",
         "expiryDate": "29-Jul-2026",
         "underlying": "USDINR",
         "updated_time": "29-Jul-2026 12:29",
@@ -88,17 +88,17 @@
       "status": "CLOSE"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 50445,
-      "DAYCHANGE": 11.5,
+      "CONTRACTSTRADED": 51920,
+      "DAYCHANGE": -12,
       "EXPIRYDATE": "25-Aug-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 24314.5,
+      "LASTPRICE": 24291,
       "OPTIONTYPE": "-",
-      "PERCHANGE": 0.05,
+      "PERCHANGE": -0.05,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "29-Jul-2026 16:27",
-      "id": "0/NIFTYFUTIDX25-Aug-2026--"
+      "TIMESTMP": "29-Jul-2026 18:25",
+      "id": "1/NIFTYFUTIDX25-Aug-2026--"
     },
     "niftyusd": {
       "index": "NIFTY50 USD",
@@ -527,6 +527,25 @@
         "options_revenue": 47.2865,
         "cash_revenue": 7.4051,
         "total_revenue": 63.4514,
+        "source": "historical"
+      }
+    },
+    {
+      "timestamp": "29-Jul-2026",
+      "revenue": {
+        "has_data": true,
+        "trade_date": "29-Jul-2026",
+        "futures_turnover": 0.0,
+        "options_premium": 0.0,
+        "cash_traded_value": 128099.99,
+        "index_futures_turnover": 0.0,
+        "stock_futures_turnover": 0.0,
+        "index_options_premium": 0.0,
+        "stock_options_premium": 0.0,
+        "futures_revenue": 0.0,
+        "options_revenue": 0.0,
+        "cash_revenue": 7.6091,
+        "total_revenue": 7.6091,
         "source": "historical"
       }
     }
