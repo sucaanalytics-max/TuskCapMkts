@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-12T11:05:40",
+  "updated_at": "2026-08-12T11:41:44",
   "market_status": {
     "marketState": [
       {
@@ -14,13 +14,13 @@
       },
       {
         "market": "Currency",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "12-Aug-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "Commodity",
@@ -51,17 +51,17 @@
       },
       {
         "market": "currencyfuture",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "12-Aug-2026",
         "index": "",
         "last": "95.1225",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open",
+        "marketStatusMessage": "Market is Closed",
         "expiryDate": "14-Aug-2026",
         "underlying": "USDINR",
-        "updated_time": "12-Aug-2026 14:35",
-        "tradeDateFormatted": "12-Aug-2026 14:35",
+        "updated_time": "12-Aug-2026 16:42",
+        "tradeDateFormatted": "12-Aug-2026 16:42",
         "slickclass": "slick-item"
       }
     ],
@@ -88,16 +88,16 @@
       "status": "CLOSE"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 39982,
-      "DAYCHANGE": -18,
+      "CONTRACTSTRADED": 40143,
+      "DAYCHANGE": -9,
       "EXPIRYDATE": "25-Aug-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 24453,
+      "LASTPRICE": 24462,
       "OPTIONTYPE": "-",
-      "PERCHANGE": -0.07,
+      "PERCHANGE": -0.04,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "12-Aug-2026 16:34",
+      "TIMESTMP": "12-Aug-2026 17:09",
       "id": "1/NIFTYFUTIDX25-Aug-2026--"
     },
     "niftyusd": {
