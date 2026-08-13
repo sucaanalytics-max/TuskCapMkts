@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-13T10:13:13",
+  "updated_at": "2026-08-13T11:41:35",
   "market_status": {
     "marketState": [
       {
@@ -10,17 +10,17 @@
         "last": 24395.85,
         "variation": -40.10000000000218,
         "percentChange": -0.16,
-        "marketStatusMessage": "Market in Post-Close Session"
+        "marketStatusMessage": "Normal Market has Closed"
       },
       {
         "market": "Currency",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "13-Aug-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "Commodity",
@@ -51,17 +51,17 @@
       },
       {
         "market": "currencyfuture",
-        "marketStatus": "Open",
+        "marketStatus": "Closed",
         "tradeDate": "13-Aug-2026",
         "index": "",
         "last": "95.3700",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open",
+        "marketStatusMessage": "Market is Closed",
         "expiryDate": "14-Aug-2026",
         "underlying": "USDINR",
-        "updated_time": "13-Aug-2026 15:39",
-        "tradeDateFormatted": "13-Aug-2026 15:39",
+        "updated_time": "13-Aug-2026 16:59",
+        "tradeDateFormatted": "13-Aug-2026 16:59",
         "slickclass": "slick-item"
       }
     ],
@@ -88,17 +88,17 @@
       "status": "CLOSE"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": null,
-      "DAYCHANGE": null,
-      "EXPIRYDATE": null,
-      "INSTRUMENTTYPE": null,
-      "LASTPRICE": null,
-      "OPTIONTYPE": null,
-      "PERCHANGE": null,
-      "STRIKEPRICE": null,
-      "SYMBOL": null,
-      "TIMESTMP": null,
-      "id": null
+      "CONTRACTSTRADED": 30977,
+      "DAYCHANGE": 8,
+      "EXPIRYDATE": "25-Aug-2026",
+      "INSTRUMENTTYPE": "FUTIDX",
+      "LASTPRICE": 24467.5,
+      "OPTIONTYPE": "-",
+      "PERCHANGE": 0.03,
+      "STRIKEPRICE": 0,
+      "SYMBOL": "NIFTY",
+      "TIMESTMP": "13-Aug-2026 17:10",
+      "id": "0/NIFTYFUTIDX25-Aug-2026--"
     },
     "niftyusd": {
       "index": "NIFTY50 USD",
@@ -116,14 +116,14 @@
     "index_options_premium": 19470.7,
     "stock_options_premium": 7136.27,
     "options_premium": 26606.97,
-    "cash_traded_value": 111156.12,
+    "cash_traded_value": 111316.13,
     "take_rate_futures": 3.46e-05,
     "take_rate_options": 0.0007006,
     "take_rate_cash": 5.94e-05,
     "futures_revenue": 2.2257,
     "options_revenue": 18.6408,
-    "cash_revenue": 6.6027,
-    "total_revenue": 27.4692,
+    "cash_revenue": 6.6122,
+    "total_revenue": 27.4787,
     "has_data": true,
     "source": "live"
   },
@@ -281,6 +281,25 @@
       }
     },
     {
+      "timestamp": "13-Aug-2026",
+      "revenue": {
+        "has_data": true,
+        "trade_date": "13-Aug-2026",
+        "futures_turnover": 0.0,
+        "options_premium": 0.0,
+        "cash_traded_value": 111635.71,
+        "index_futures_turnover": 0.0,
+        "stock_futures_turnover": 0.0,
+        "index_options_premium": 0.0,
+        "stock_options_premium": 0.0,
+        "futures_revenue": 0.0,
+        "options_revenue": 0.0,
+        "cash_revenue": 6.6312,
+        "total_revenue": 6.6312,
+        "source": "historical"
+      }
+    },
+    {
       "timestamp": "2026-08-13",
       "revenue": {
         "trade_date": "2026-08-13",
@@ -290,14 +309,14 @@
         "index_options_premium": 19470.7,
         "stock_options_premium": 7136.27,
         "options_premium": 26606.97,
-        "cash_traded_value": 111156.12,
+        "cash_traded_value": 111316.13,
         "take_rate_futures": 3.46e-05,
         "take_rate_options": 0.0007006,
         "take_rate_cash": 5.94e-05,
         "futures_revenue": 2.2257,
         "options_revenue": 18.6408,
-        "cash_revenue": 6.6027,
-        "total_revenue": 27.4692,
+        "cash_revenue": 6.6122,
+        "total_revenue": 27.4787,
         "has_data": true,
         "source": "live"
       }
