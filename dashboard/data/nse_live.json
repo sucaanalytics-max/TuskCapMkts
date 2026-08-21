@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-21T11:01:04",
+  "updated_at": "2026-08-21T11:19:33",
   "market_status": {
     "marketState": [
       {
@@ -54,14 +54,14 @@
         "marketStatus": "Open",
         "tradeDate": "21-Aug-2026",
         "index": "",
-        "last": "95.7050",
+        "last": "95.6950",
         "variation": "",
         "percentChange": "",
         "marketStatusMessage": "Market is Open",
         "expiryDate": "27-Aug-2026",
         "underlying": "USDINR",
-        "updated_time": "21-Aug-2026 16:30",
-        "tradeDateFormatted": "21-Aug-2026 16:30",
+        "updated_time": "21-Aug-2026 16:49",
+        "tradeDateFormatted": "21-Aug-2026 16:49",
         "slickclass": "slick-item"
       }
     ],
@@ -88,17 +88,17 @@
       "status": "CLOSE"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 88285,
-      "DAYCHANGE": 2.5,
+      "CONTRACTSTRADED": 88309,
+      "DAYCHANGE": 7,
       "EXPIRYDATE": "25-Aug-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 24288.5,
+      "LASTPRICE": 24293,
       "OPTIONTYPE": "-",
-      "PERCHANGE": 0.01,
+      "PERCHANGE": 0.03,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "21-Aug-2026 16:29",
-      "id": "0/NIFTYFUTIDX25-Aug-2026--"
+      "TIMESTMP": "21-Aug-2026 16:47",
+      "id": "1/NIFTYFUTIDX25-Aug-2026--"
     },
     "niftyusd": {
       "index": "NIFTY50 USD",
@@ -414,6 +414,25 @@
         "total_revenue": 40.0046,
         "has_data": true,
         "source": "live"
+      }
+    },
+    {
+      "timestamp": "21-Aug-2026",
+      "revenue": {
+        "has_data": true,
+        "trade_date": "21-Aug-2026",
+        "futures_turnover": 0.0,
+        "options_premium": 0.0,
+        "cash_traded_value": 111233.2,
+        "index_futures_turnover": 0.0,
+        "stock_futures_turnover": 0.0,
+        "index_options_premium": 0.0,
+        "stock_options_premium": 0.0,
+        "futures_revenue": 0.0,
+        "options_revenue": 0.0,
+        "cash_revenue": 6.6073,
+        "total_revenue": 6.6073,
+        "source": "historical"
       }
     }
   ]
