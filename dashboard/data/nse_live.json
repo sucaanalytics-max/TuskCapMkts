@@ -1,20 +1,20 @@
 {
-  "updated_at": "2026-08-28T14:54:53",
+  "updated_at": "2026-08-28T21:18:40",
   "market_status": {
     "marketState": [
       {
         "market": "Capital Market",
-        "marketStatus": "Closed",
+        "marketStatus": "Close",
         "tradeDate": "28-Aug-2026 15:30",
         "index": "NIFTY 50",
         "last": 24175.65,
         "variation": 84.80000000000291,
         "percentChange": 0.35,
-        "marketStatusMessage": "Normal Market has Closed"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "Currency",
-        "marketStatus": "Closed",
+        "marketStatus": "Close",
         "tradeDate": "28-Aug-2026",
         "index": "",
         "last": "",
@@ -24,17 +24,17 @@
       },
       {
         "market": "Commodity",
-        "marketStatus": "Open",
+        "marketStatus": "Close",
         "tradeDate": "28-Aug-2026",
         "index": "",
         "last": "",
         "variation": "",
         "percentChange": "",
-        "marketStatusMessage": "Market is Open"
+        "marketStatusMessage": "Market is Closed"
       },
       {
         "market": "Debt",
-        "marketStatus": "Closed",
+        "marketStatus": "Close",
         "tradeDate": "28-Aug-2026",
         "index": "",
         "last": "",
@@ -51,7 +51,7 @@
       },
       {
         "market": "currencyfuture",
-        "marketStatus": "Closed",
+        "marketStatus": "Close",
         "tradeDate": "28-Aug-2026",
         "index": "",
         "last": "95.6075",
@@ -88,17 +88,17 @@
       "status": "CLOSE"
     },
     "giftnifty": {
-      "CONTRACTSTRADED": 42823,
-      "DAYCHANGE": 7.5,
+      "CONTRACTSTRADED": 46485,
+      "DAYCHANGE": -29.5,
       "EXPIRYDATE": "29-Sep-2026",
       "INSTRUMENTTYPE": "FUTIDX",
-      "LASTPRICE": 24319.5,
+      "LASTPRICE": 24282.5,
       "OPTIONTYPE": "-",
-      "PERCHANGE": 0.03,
+      "PERCHANGE": -0.12,
       "STRIKEPRICE": 0,
       "SYMBOL": "NIFTY",
-      "TIMESTMP": "28-Aug-2026 20:23",
-      "id": "0/NIFTYFUTIDX29-Sep-2026--"
+      "TIMESTMP": "29-Aug-2026 02:29",
+      "id": "1/NIFTYFUTIDX29-Sep-2026--"
     },
     "niftyusd": {
       "index": "NIFTY50 USD",
