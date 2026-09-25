@@ -1,20 +1,20 @@
 {
-  "date": "2026-08-21",
+  "date": "2026-09-25",
   "weekday": 4,
   "weekday_name": "Friday",
   "day_type": "normal",
   "snapshots": [
     {
-      "hour_label": "15:30",
-      "captured_ist": "2026-08-21T15:28:17",
-      "elapsed_minutes": 375,
-      "total_revenue": 4.14,
-      "cash_revenue": 0.74,
-      "options_revenue": 3.4,
-      "futures_revenue": 0.0,
-      "has_data": true,
-      "predicted_eod": 4.14,
-      "pred_method": "historical/normal"
+      "hour_label": "14:00",
+      "captured_ist": "2026-09-25T14:03:02",
+      "elapsed_minutes": 285,
+      "total_revenue": null,
+      "cash_revenue": null,
+      "options_revenue": null,
+      "futures_revenue": null,
+      "has_data": false,
+      "predicted_eod": null,
+      "pred_method": "none"
     }
   ]
 }
